@@ -1,7 +1,7 @@
 from django.db import models
 
 class Partner:
-    name = models.CharField(
+    name = models.TextField(
         'Название',
         max_length=50,
         help_text='Название организации партнера',
