@@ -3,7 +3,6 @@ from django.db import models
 class Partner:
     name = models.TextField(
         'Название',
-        max_length=50,
         help_text='Название организации партнера',
     )
     
@@ -15,7 +14,7 @@ class Partner:
     
     img = models.ImageField(
         'Картинка',
-        upload_to='partners',
+        upload_to='images/partners',
         help_text='Изображение логотипа партнёра',
     )
     
