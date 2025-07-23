@@ -15,9 +15,18 @@ urlpatterns = [
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns += [
-        path('__debug__', include(debug_toolbar.urls)),
-        path(API_PREFIX + '/schema/', SpectacularAPIView.as_view(), name='schema'),
-        path(API_PREFIX + '/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger')
+        path(
+            '__debug__',
+            include(debug_toolbar.urls)
+        ),
+        path(
+            API_PREFIX + '/schema/',
+            SpectacularAPIView.as_view(), name='schema'
+        ),
+        path(
+            API_PREFIX + '/swagger/',
+            SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'
+        )
     ]
 
     urlpatterns += static(

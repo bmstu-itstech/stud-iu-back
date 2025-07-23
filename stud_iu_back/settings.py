@@ -44,8 +44,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'corsheaders',
-    
+
     'partners',
+    'board_members',
+    'events',
 ]
 
 MIDDLEWARE = [
