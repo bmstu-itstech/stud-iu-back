@@ -1,18 +1,18 @@
 from rest_framework import serializers
 
-from partners.models import Partner
+from partners.models import Partners
 
 
-class PartnerSerializer(serializers.ModelSerializer):
+class PartnersSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Partner
+        model = Partners
         fields = (
+            'id',
             'name',
             'url',
-            'img',
-            'id',
+            'image',
         )
         extra_kwargs = {
             'url': {'required': False},
-            'img': {'required': False}
+            'image': {'required': False},
         }

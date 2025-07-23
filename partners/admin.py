@@ -1,12 +1,13 @@
 from django.contrib import admin
 
-from partners.models import Partner
+from partners.models import Partners
 
 
-@admin.register(Partner)
-class NewsAdmin(admin.ModelAdmin):
+@admin.register(Partners)
+class PartnersAdmin(admin.ModelAdmin):
     list_display = (
+        'id',
         'name',
         'url',
-        'img',
+        'image',
     )
