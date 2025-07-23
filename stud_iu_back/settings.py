@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'corsheaders',
 
+    'partners',
     'board_members',
     'events',
 ]
