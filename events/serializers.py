@@ -35,6 +35,7 @@ class EventsSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'description',
+            'color',
             'start_datetime',
             'end_datetime',
             'date_range',
@@ -46,6 +47,8 @@ class EventsSerializer(serializers.ModelSerializer):
             'start_datetime': {'required': True},
             'end_datetime': {'required': False},
         }
+
+        read_only_fields = ('id', 'date_range', )
 
     def get_date_range(self, object):
         return object.date_range_display
