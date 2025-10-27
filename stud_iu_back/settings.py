@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'partners',
     'board_members',
     'events',
+    'news',
 ]
 
 MIDDLEWARE = [

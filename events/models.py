@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 from events.enums import Precision
 from events.utils import DateRange
@@ -10,6 +11,18 @@ class Events(models.Model):
     )
     description = models.TextField(
         'Описание',
+    )
+    color = models.CharField(
+        'Цвет',
+        max_length=6,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r'^(?:[0-9a-fA-F]{3}){1,2}$',
+                message="Введите цвет в формате HEX, например FFFFFF",
+            )
+        ],
+        help_text='Цвет в формате HEX, например FFFFFF',
     )
     precision = models.CharField(
         'Точность',
