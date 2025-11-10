@@ -10,8 +10,11 @@ class News(models.Model):
         'Описание',
         blank=True,
     )
-    cover_url = models.URLField(
-        'Ссылка на обложку',
+    cover = models.ImageField(
+        'Обложка',
+        upload_to='images/news/',
+        blank=True,
+        null=True,
     )
     created_at = models.DateTimeField(
         'Дата',

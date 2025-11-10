@@ -60,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'stud_iu_back.urls'
@@ -92,6 +93,16 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+if not DEBUG:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env.env_required('POSTGRES_DB'),
+        'USER': env.env_required('POSTGRES_USER'),
+        'PASSWORD': env.env_required('POSTGRES_PASSWORD'),
+        'HOST': env.env_required('DB_HOST'),
+        'PORT': env.env_with_default_int('DB_PORT', 5432),
+    }
 
 
 # Password validation

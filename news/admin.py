@@ -8,6 +8,6 @@ class NewsAdmin(admin.ModelAdmin):
         'id',
         'title',
         'description',
-        'cover_url',
+        'cover',
         'created_at',
     )

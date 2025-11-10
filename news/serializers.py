@@ -12,15 +12,15 @@ class NewsSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
-            'cover_url',
+            'cover',
             'created_at',
         )
 
         extra_kwargs = {
             'description': {'required': False, 'allow_blank': True},
             'title': {'required': True, 'max_length': 128},
-            'cover_url': {'required': True},
             'created_at': {'required': True},
+            'cover': {'required': False},
         }
         
         read_only_fields = ('id', )
