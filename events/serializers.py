@@ -20,7 +20,6 @@ class EventsSerializer(serializers.ModelSerializer):
     images = EventImagesSerializer(
         many=True,
         read_only=True,
-        source='events_images'
     )
     uploaded_images = serializers.ListField(
         child=serializers.ImageField(allow_empty_file=False, use_url=False),
@@ -35,6 +34,7 @@ class EventsSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'description',
+            'place',
             'color',
             'start_datetime',
             'end_datetime',

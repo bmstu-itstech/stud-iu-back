@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
+from django.db.models import Q, CheckConstraint
 
 from events.enums import Precision
 from events.utils import DateRange
@@ -11,6 +12,11 @@ class Events(models.Model):
     )
     description = models.TextField(
         'Описание',
+        blank=True,
+    )
+    place = models.TextField(
+        'Место проведения',
+        blank=True,
     )
     color = models.CharField(
         'Цвет',
@@ -84,14 +90,14 @@ class EventImages(models.Model):
     past_event = models.ForeignKey(
         PastEvents,
         on_delete=models.CASCADE,
-        related_name='events_images',
+        related_name='images',
         blank=True,
         null=True,
     )
     future_event = models.ForeignKey(
         FutureEvents,
         on_delete=models.CASCADE,
-        related_name='events_images',
+        related_name='images',
         blank=True,
         null=True,
     )
@@ -101,3 +107,14 @@ class EventImages(models.Model):
         blank=True,
         null=True,
     )
+
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                check=(
+                    Q(past_event__isnull=False, future_event__isnull=True) |
+                    Q(past_event__isnull=True, future_event__isnull=False)
+                ),
+                name='only_one_event_link'
+            )
+        ]      

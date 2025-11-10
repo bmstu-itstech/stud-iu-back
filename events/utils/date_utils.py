@@ -34,11 +34,11 @@ class DateRange:
 
     def _parse_date(self, date_str: str) -> Union[datetime, None]:
         try:
-            if date_str == '':
+            if not date_str:
                 return None
 
             return parse(date_str, dayfirst=True, fuzzy=True)
-        except ValueError:
+        except (ValueError, TypeError):
             raise ValueError(f'Не удалось распознать дату: {date_str}')
 
     def _format_single_date(self, date: datetime) -> str:
