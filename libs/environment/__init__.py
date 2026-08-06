@@ -8,9 +8,9 @@ from libs.environment.exceptions import (
 env = Environment()
 
 __all__ = [
-    'Environment',
-    'env',
-    'EnvironmentError',
-    'EnvVariableNotDefinedError',
-    'EnvironmentNotLoadedError',
+    "Environment",
+    "env",
+    "EnvironmentError",
+    "EnvVariableNotDefinedError",
+    "EnvironmentNotLoadedError",
 ]

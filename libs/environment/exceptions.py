@@ -9,7 +9,7 @@ class EnvFileNotFoundError(EnvironmentError):
     """Raised when the file at the specified path is not found."""
 
     def __init__(self, path: Path):
-        super().__init__(f'.env file not found at: {path}')
+        super().__init__(f".env file not found at: {path}")
 
 
 class EnvVariableNotDefinedError(EnvironmentError):
@@ -17,9 +17,7 @@ class EnvVariableNotDefinedError(EnvironmentError):
 
     def __init__(self, key: str):
         self.key = key
-        super().__init__(
-            f'Environment variable "{key}" is required but not defined'
-        )
+        super().__init__(f'Environment variable "{key}" is required but not defined')
 
 
 class EnvironmentNotLoadedError(EnvironmentError):
@@ -28,6 +26,4 @@ class EnvironmentNotLoadedError(EnvironmentError):
     """
 
     def __init__(self):
-        super().__init__(
-            'Environment is not loaded. Call Environment.load() first'
-        )
+        super().__init__("Environment is not loaded. Call Environment.load() first")

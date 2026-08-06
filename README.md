@@ -11,3 +11,9 @@ uv run mkdocs serve
 ```
 
 Документация будет доступна по следующему адресу: <http://127.0.0.1:8000>
+
+Запуск сервера:
+
+```shell
+uv run python manage.py runserver
+```

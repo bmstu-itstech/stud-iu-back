@@ -46,7 +46,7 @@ class Environment:
             raise EnvVariableNotDefinedError(key)
         return value
 
-    def get(self, key: str, default: str = '') -> str:
+    def get(self, key: str, default: str = "") -> str:
         """Return a string variable's value, or default if not set."""
         self._ensure_loaded()
         return self._env(key, default=default)
@@ -61,7 +61,7 @@ class Environment:
         self._ensure_loaded()
         return self._env.int(key, default=default)
 
-    def get_list(self, key: str, default: str = '') -> list[str]:
+    def get_list(self, key: str, default: str = "") -> list[str]:
         """Return a whitespace-separated variable's value as a list.
 
         Example: "127.0.0.1 localhost" -> ['127.0.0.1', 'localhost']
