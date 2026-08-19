@@ -10,6 +10,7 @@ from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
+from .models import News
 from .serializers import NewsCreateSchema, NewsPathSchema, NewsSchema
 from .services import (
     NewsNotFoundError,
@@ -21,7 +22,7 @@ from .services import (
 )
 
 
-def _to_schema(news) -> NewsSchema:
+def _to_schema(news: News) -> NewsSchema:
     return NewsSchema(
         id=news.pk,
         title=news.title,
