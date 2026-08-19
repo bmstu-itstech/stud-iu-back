@@ -4,7 +4,6 @@ from pathlib import Path
 import environ
 
 from libs.environment.exceptions import (
-    EnvFileNotFoundError,
     EnvironmentNotLoadedError,
     EnvVariableNotDefinedError,
 )
@@ -27,15 +26,14 @@ class Environment:
         self._env = environ.Env()
         self._is_loaded = False
 
-    def load(self, env_path: Path) -> None:
-        """Load environment variables from the given .env file.
+    def load(self, env_path: Path | None = None) -> None:
+        """Загружает переменные из .env файла, если он существует.
 
-        Raises EnvFileNotFoundError if the file does not exist.
+        Если файла нет, то читает системные переменные окружения.
         """
-        if not env_path.exists():
-            raise EnvFileNotFoundError(env_path)
+        if env_path is not None and env_path.exists():
+            environ.Env.read_env(env_path)
 
-        environ.Env.read_env(env_path)
         self._is_loaded = True
 
     def require(self, key: str) -> str:

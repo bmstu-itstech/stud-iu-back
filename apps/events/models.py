@@ -84,6 +84,11 @@ class FutureEvents(Events):
 
 
 class EventImages(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     past_event = models.ForeignKey(
         PastEvents,
         on_delete=models.CASCADE,

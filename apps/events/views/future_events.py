@@ -5,7 +5,9 @@ from django.http import HttpResponse
 from dmr import Body, Controller, Path, modify
 from dmr.endpoint import Endpoint
 from dmr.errors import ErrorType
-from dmr.plugins.msgspec import MsgspecSerializer
+from dmr.metadata import ResponseSpec
+from dmr.parsers import MultiPartParser
+from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
 from apps.events.serializers import (
     EventPathSchema,
@@ -39,10 +41,19 @@ def _future_to_schema(event) -> FutureEventSchema:
 
 @final
 class FutureEventListController(Controller[MsgspecSerializer]):
+    """Класс для взаимодействия с коллекцией сущностей FutureEvent."""
+
+    parsers = (
+        MsgspecJsonParser(),
+        MultiPartParser(),
+    )
+
     def get(self) -> list[FutureEventSchema]:
+        """Получение списка всех сущностей FutureEvent."""
         return [_future_to_schema(e) for e in future_event_list_service()]
 
     def post(self, parsed_body: Body[FutureEventCreateSchema]) -> FutureEventSchema:
+        """Создание новой сущности FutureEvent."""
         images = self.request.FILES.getlist("images") or None
         event = future_event_create_service(parsed_body, images=images)
         return _future_to_schema(event)
@@ -50,7 +61,22 @@ class FutureEventListController(Controller[MsgspecSerializer]):
 
 @final
 class FutureEventDetailController(Controller[MsgspecSerializer]):
+    """Класс для взаимодействия с сущностью FutureEvent."""
+
+    parsers = (
+        MsgspecJsonParser(),
+        MultiPartParser(),
+    )
+
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.NOT_FOUND,
+        ),
+    )
+
     def get(self, parsed_path: Path[EventPathSchema]) -> FutureEventSchema:
+        """Получение сущности FutureEvent по её ID."""
         return _future_to_schema(future_event_get_service(parsed_path.event_id))
 
     def put(
@@ -58,6 +84,7 @@ class FutureEventDetailController(Controller[MsgspecSerializer]):
         parsed_path: Path[EventPathSchema],
         parsed_body: Body[FutureEventCreateSchema],
     ) -> FutureEventSchema:
+        """Обновление существующей сущности FutureEvent по её ID."""
         images = (
             self.request.FILES.getlist("images")
             if "images" in self.request.FILES
@@ -70,6 +97,7 @@ class FutureEventDetailController(Controller[MsgspecSerializer]):
 
     @modify(status_code=HTTPStatus.NO_CONTENT)
     def delete(self, parsed_path: Path[EventPathSchema]) -> None:
+        """Удаление сущности FutureEvent по её ID."""
         future_event_delete_service(parsed_path.event_id)
 
     @override
