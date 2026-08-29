@@ -49,14 +49,8 @@ def board_member_update_service(
     payload: BoardMemberCreateSchema,
     image: UploadedFile | None = None,
 ) -> BoardMember:
-    """Обновляет существующую сущность BoardMember.
-
-    Если сущность не найдена, возникает ошибка BoardMemberNotFoundError.
-    """
-    try:
-        board_member = BoardMember.objects.get(pk=board_member_id)
-    except BoardMember.DoesNotExist:
-        raise BoardMemberNotFoundError from None
+    """Обновляет существующую сущность BoardMember."""
+    board_member = board_member_get_service(board_member_id)
 
     board_member.name = payload.name
     board_member.link = payload.link

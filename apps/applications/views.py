@@ -13,26 +13,48 @@ from .serializers import (
     ApplicationCreateSchema,
     ApplicationPathSchema,
     ApplicationSchema,
+    FormFieldSchema,
 )
 from .services import (
+    CATEGORY_MAP,
+    TECH_TASK_MAP,
+    VISUAL_CONTENT_MAP,
     ApplicationNotFoundError,
     application_create_service,
     application_delete_service,
     application_get_service,
     application_list_service,
     application_update_service,
+    get_form_structure_service,
+    map_to_choice_items,
 )
 
 
 def _to_schema(application: Application) -> ApplicationSchema:
     return ApplicationSchema(
+        id=application.id,
         full_name=application.full_name,
         group=application.group,
         birth_date=application.birth_date,
         telegram_url=application.telegram_url,
         vk_url=application.vk_url,
         github_url=application.github_url,
+        portfolio_url=application.portfolio_url,
+        categories=map_to_choice_items(application.categories or [], CATEGORY_MAP),
+        tech_tasks=map_to_choice_items(application.tech_tasks or [], TECH_TASK_MAP),
+        visual_content_types=map_to_choice_items(
+            application.visual_content_types or [], VISUAL_CONTENT_MAP
+        ),
     )
+
+
+@final
+class ApplicationFormSchemaController(Controller[MsgspecSerializer]):
+    """Класс для взаимодействия с анкетой."""
+
+    def get(self) -> list[FormFieldSchema]:
+        """Получение структуры формы."""
+        return get_form_structure_service()
 
 
 @final
@@ -45,16 +67,12 @@ class ApplicationController(Controller[MsgspecSerializer]):
 
     def post(self, parsed_body: Body[ApplicationCreateSchema]) -> ApplicationSchema:
         """Создание новой сущности Application."""
-        return _to_schema(
-            application_create_service(
-                payload=parsed_body,
-            )
-        )
+        return _to_schema(application_create_service(payload=parsed_body))
 
 
 @final
 class ApplicationDetailController(Controller[MsgspecSerializer]):
-    """Класс для взаиможействия с сущностью Application."""
+    """Получение информации о сущности Application."""
 
     responses = (
         ResponseSpec(
@@ -70,7 +88,7 @@ class ApplicationDetailController(Controller[MsgspecSerializer]):
     def put(
         self,
         parsed_path: Path[ApplicationPathSchema],
-        parsed_body: Body[ApplicationSchema],
+        parsed_body: Body[ApplicationCreateSchema],
     ) -> ApplicationSchema:
         """Обновление существующей сущности Application по её ID."""
         return _to_schema(

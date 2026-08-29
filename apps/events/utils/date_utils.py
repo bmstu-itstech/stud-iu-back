@@ -51,7 +51,7 @@ class DateRange:
 
             return parse(date_str, dayfirst=True, fuzzy=True)
         except ValueError, TypeError:
-            raise ValueError(f"Не удалось распознать дату: {date_str}")
+            raise ValueError(f"Не удалось распознать дату: {date_str}") from None
 
     def _format_single_date(self, date: datetime) -> str:
         if not date:
