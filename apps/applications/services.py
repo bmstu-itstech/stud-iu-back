@@ -30,7 +30,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="ФИО",
             type=FieldType.TEXT,
             required=True,
-            placeholder="Иванов Иван Сергеевич",
+            placeholder="Иванов Иван Иванович",
         ),
         FormFieldSchema(
             key="group",
@@ -38,6 +38,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.TEXT,
             required=True,
             placeholder="ИУ6-42Б",
+            pattern=r"^((((ФМОП-)?(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР)(К)?[1-9]\d?)|(ЮР(\.ДК)?))(К)?[ИЦ]?-(((1[0-2])|(\d))((\d)|(.\d\d+))([АМБ]?(В)?)))$"
         ),
         FormFieldSchema(
             key="birth_date",
