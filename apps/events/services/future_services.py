@@ -34,6 +34,7 @@ def future_event_create_service(
     event = FutureEvents.objects.create(
         title=payload.title,
         description=payload.description,
+        extended_description=payload.extended_description,
         place=payload.place,
         precision=payload.precision,
         start_datetime=payload.start_datetime,
@@ -51,6 +52,7 @@ def _update_future_event_fields(
 ) -> None:
     event.title = payload.title
     event.description = payload.description
+    event.extended_description = payload.extended_description
     event.place = payload.place
     event.precision = payload.precision
     event.start_datetime = payload.start_datetime

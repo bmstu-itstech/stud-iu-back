@@ -22,6 +22,11 @@ class Events(models.Model):
         max_length=256,
         blank=True,
     )
+    extended_description = models.TextField(
+        "Развёрнутое описание",
+        blank=True,
+        help_text="Развёрнутое описание для подраздела «О мероприятии» на странице мероприятия",
+    )
     place = models.CharField(
         "Место проведения",
         max_length=256,
