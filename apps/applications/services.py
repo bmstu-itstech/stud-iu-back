@@ -30,12 +30,15 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="ФИО",
             type=FieldType.TEXT,
             required=True,
+            placeholder="Иванов Иван Иванович",
         ),
         FormFieldSchema(
             key="group",
             label="Учебная группа",
             type=FieldType.TEXT,
             required=True,
+            placeholder="ИУ6-42Б",
+            pattern=r"^((((ФМОП-)?(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР)(К)?[1-9]\d?)|(ЮР(\.ДК)?))(К)?[ИЦ]?-(((1[0-2])|(\d))((\d)|(.\d\d+))([АМБ]?(В)?)))$"
         ),
         FormFieldSchema(
             key="birth_date",
@@ -48,18 +51,24 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="Ссылка на Telegram",
             type=FieldType.URL,
             required=True,
+            placeholder="https://t.me/username",
+            pattern=r"^https://t\.me/[A-Za-z0-9_]{3,32}/?$",
         ),
         FormFieldSchema(
             key="vk_url",
             label="Ссылка на профиль в VK",
             type=FieldType.URL,
             required=True,
+            placeholder="https://vk.ru/username",
+            pattern=r"^https://vk\.(ru|com)/[A-Za-z0-9_]{3,32}/?$",
         ),
         FormFieldSchema(
             key="github_url",
             label="Профиль на GitHub",
             type=FieldType.URL,
             required=True,
+            placeholder="https://github.com/username",
+            pattern=r"^https://github\.com/[A-Za-z0-9-]{1,39}/?$",
             depends_on=DependencySchema(
                 field="categories",
                 contains=Application.ActivityCategory.PROGRAMMING.value,
@@ -70,6 +79,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="Ссылка на портфолио",
             type=FieldType.URL,
             required=False,
+            placeholder="https://example.com/portfolio",
             depends_on=DependencySchema(
                 field="categories",
                 contains=Application.ActivityCategory.CONTENT_CREATION.value,

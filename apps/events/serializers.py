@@ -16,8 +16,11 @@ class EventSchema(msgspec.Struct):
     id: DatabaseId
     title: str
     description: str
+    extended_description: str
     place: str
     precision: str
+    start_datetime: str
+    end_datetime: str | None
     date_range_display: str
     images: list[EventImageSchema]
 
@@ -38,6 +41,7 @@ class EventCreateSchema(msgspec.Struct):
     title: str
     start_datetime: str
     description: str = ""
+    extended_description: str = ""
     place: str = ""
     precision: str = "time"
     end_datetime: str | None = None

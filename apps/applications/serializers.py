@@ -34,6 +34,8 @@ class FormFieldSchema(msgspec.Struct):
     label: str
     type: FieldType
     required: bool = False
+    placeholder: str | None = None
+    pattern: str | None = None
     options: list[OptionSchema] | None = None
     depends_on: DependencySchema | None = None
 
