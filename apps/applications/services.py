@@ -51,7 +51,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="Ссылка на Telegram",
             type=FieldType.URL,
             required=True,
-            placeholder="https://t.me/durov",
+            placeholder="https://t.me/username",
             pattern=r"^https://t\.me/[A-Za-z0-9_]{3,32}/?$",
         ),
         FormFieldSchema(
@@ -59,7 +59,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             label="Ссылка на профиль в VK",
             type=FieldType.URL,
             required=True,
-            placeholder="https://vk.ru/durov",
+            placeholder="https://vk.ru/username",
             pattern=r"^https://vk\.(ru|com)/[A-Za-z0-9_]{3,32}/?$",
         ),
         FormFieldSchema(
