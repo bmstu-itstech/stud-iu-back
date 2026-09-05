@@ -11,7 +11,8 @@ class BoardMember(models.Model):
     )
     name = models.CharField(
         "ФИО",
-        help_text="Фамилия, имя и отчество члена руководящего состава, например, Николай Эрнестович Бауман",
+        help_text="Фамилия, имя и отчество члена руководящего состава, \
+            например, Николай Эрнестович Бауман",
         max_length=256,
     )
     link = models.URLField(

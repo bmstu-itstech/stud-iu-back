@@ -64,7 +64,8 @@ class DateRange:
         elif self.precision == Precision.DAY:
             return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year}"
         elif self.precision == Precision.TIME:
-            return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} {date.strftime('%H:%M')}"
+            return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} \
+                {date.strftime('%H:%M')}"
         else:
             return str(date)
 
