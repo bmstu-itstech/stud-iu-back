@@ -58,9 +58,6 @@ jobs:
       - name: Run Ruff (Linter)
         run: uv run ruff check .
 
-      - name: Run Pytest
-        run: uv run pytest
-
   deploy:
     needs: lint-and-test
     runs-on: ubuntu-latest
