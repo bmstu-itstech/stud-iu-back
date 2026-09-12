@@ -24,7 +24,7 @@ RUN python -m compileall -q /app
 RUN mkdir -p /app/static /app/media
 
 
-FROM python:3.14-slim AS runtime
+FROM python:3.14-slim AS production_build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
