@@ -24,12 +24,12 @@ env.load(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.require("SECRET_KEY")
+SECRET_KEY = env.require("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.get_bool("DEBUG", False)
+DEBUG = env.get_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = env.get_list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS")
 
 
 # Application definition
@@ -100,8 +100,8 @@ if not DEBUG:
         "NAME": env.require("POSTGRES_DB"),
         "USER": env.require("POSTGRES_USER"),
         "PASSWORD": env.require("POSTGRES_PASSWORD"),
-        "HOST": env.require("DB_HOST"),
-        "PORT": env.get_int("DB_PORT", 5432),
+        "HOST": env.require("DJANGO_DATABASE_HOST"),
+        "PORT": env.get_int("DJANGO_DATABASE_PORT", 5432),
     }
 
 # Password validation

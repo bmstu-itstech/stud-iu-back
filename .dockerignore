@@ -1,6 +1,10 @@
-*.env
-venv
+.venv
 Dockerfile
 .dockerignore
 .git
+.gitignore
 .volume
+__pycache__
+.ruff_cache
+.pytest_cache
+.env
