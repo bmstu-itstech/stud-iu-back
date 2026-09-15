@@ -30,8 +30,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system app && adduser --system --ingroup app app
-
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
@@ -41,12 +39,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 COPY --from=builder --chown=app:app /app /app
 
-USER app
-
-EXPOSE 8000
-
 CMD ["gunicorn", "config.wsgi:application", \
     "--bind", "0.0.0.0:8000", \
-    "--workers", "4", \
     "--access-logfile", "-", \
     "--error-logfile", "-"]
