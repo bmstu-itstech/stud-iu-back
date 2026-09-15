@@ -29,7 +29,7 @@ SECRET_KEY = env.require("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS")
+ALLOWED_HOSTS = [env.get("DOMAIN_NAME", "localhost")]
 
 
 # Application definition
