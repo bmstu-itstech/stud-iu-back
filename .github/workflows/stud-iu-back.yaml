@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - main
-      - dev
   pull_request:
 
 jobs:
-  lint-and-test:
+  lint:
     runs-on: ubuntu-latest
     environment: development
 
@@ -26,7 +25,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
 
     steps:
       - name: Check out repository
@@ -48,10 +46,10 @@ jobs:
 
       - name: Create .env for tests
         run: |
-          cp .env.example .env
-          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-          echo "DB_HOST=localhost" >> .env
-          echo "DB_PORT=5432" >> .env
+          touch .env
+          echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
+          echo "DJANGO_DATABASE_HOST=localhost" >> .env
+          echo "DJANGO_DATABASE_PORT=5432" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
@@ -60,36 +58,37 @@ jobs:
         run: uv run ruff check .
 
   deploy:
-    needs: lint-and-test
+    needs: lint
     runs-on: ubuntu-latest
     environment: production
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Deploy to Production
+      - name: Deploy to the production
         uses: appleboy/ssh-action@v1.0.3
         env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEBUG: "False"
-          ALLOWED_HOSTS: ${{ vars.ALLOWED_HOSTS }}
-          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          EXTERNAL_HTTP_PORT: ${{ vars.EXTERNAL_HTTP_PORT }}
+          PGSSLROOTCERT: ${{ vars.PGSSLROOTCERT }}
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_DATABASE_HOST: ${{ secrets.DJANGO_DATABASE_HOST }}
+          DJANGO_DATABASE_PORT: ${{ secrets.DJANGO_DATABASE_PORT }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          DB_HOST: "db"
-          DB_PORT: "5432"
-          POSTGRES_EXTERNAL_PORT: ${{ vars.POSTGRES_EXTERNAL_PORT }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          DJANGO_MEDIA_VOLUME: ${{ vars.DJANGO_MEDIA_VOLUME }}
+          DJANGO_STATIC_VOLUME: ${{ vars.DJANGO_STATIC_VOLUME }}
         with:
           host: ${{ vars.SSH_HOST }}
           port: ${{ vars.SSH_PORT }}
           username: ${{ vars.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          envs: SECRET_KEY,DEBUG,ALLOWED_HOSTS,CORS_ALLOWED_ORIGINS,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,DB_HOST,DB_PORT,POSTGRES_EXTERNAL_PORT
+          envs: EXTERNAL_HTTP_PORT,PGSSLROOTCERT,DJANGO_SECRET_KEY,DJANGO_DATABASE_HOST,DJANGO_DATABASE_PORT,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,DOMAIN_NAME,DJANGO_MEDIA_VOLUME,DJANGO_STATIC_VOLUME
           script: |
             cd ${{ vars.PROJECT_DIR }}
             git stash
             git checkout main
             git pull origin main
-            docker compose -f docker-compose.yaml -f docker-compose.ci.yaml up --build -d
+            docker compose -f docker-compose.ci.yaml up --build -d
             docker system prune -f
