@@ -10,7 +10,11 @@ from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
-from .serializers import BoardMemberPathSchema, BoardMemberSchema
+from .serializers import (
+    BoardMemberCreateSchema,
+    BoardMemberPathSchema,
+    BoardMemberSchema,
+)
 from .services import (
     BoardMemberNotFoundError,
     board_member_create_service,
@@ -46,7 +50,7 @@ class BoardMemberListController(Controller[MsgspecSerializer]):
             _to_schema(board_member) for board_member in board_member_list_service()
         ]
 
-    def post(self, parsed_body: Body[BoardMemberSchema]) -> BoardMemberSchema:
+    def post(self, parsed_body: Body[BoardMemberCreateSchema]) -> BoardMemberSchema:
         """Создание новой сущности BoardMember."""
         image_file: UploadedFile | None = self.request.FILES.get("image")
 
@@ -81,7 +85,7 @@ class BoardMemberDetailController(Controller[MsgspecSerializer]):
     def put(
         self,
         parsed_path: Path[BoardMemberPathSchema],
-        parsed_body: Body[BoardMemberSchema],
+        parsed_body: Body[BoardMemberCreateSchema],
     ) -> BoardMemberSchema:
         """Обновление существующей сущности BoardMember по её ID."""
         image_file: UploadedFile | None = self.request.FILES.get("image")
