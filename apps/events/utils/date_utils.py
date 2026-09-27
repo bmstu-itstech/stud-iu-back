@@ -36,6 +36,16 @@ MONTH_CASES = {
 }
 
 
+def parse_date(date_str: str | None) -> datetime | None:
+    if not date_str:
+        return None
+
+    try:
+        return parse(date_str, dayfirst=True, fuzzy=True)
+    except ValueError, TypeError, OverflowError:
+        raise ValueError(f"Не удалось распознать дату: {date_str}") from None
+
+
 class DateRange:
     def __init__(self, start: str, end: str, precision: Precision) -> None:
         self.start: str = start
@@ -45,13 +55,7 @@ class DateRange:
         self.end_date: datetime = self._parse_date(self.end)
 
     def _parse_date(self, date_str: str) -> datetime | None:
-        try:
-            if not date_str:
-                return None
-
-            return parse(date_str, dayfirst=True, fuzzy=True)
-        except ValueError, TypeError:
-            raise ValueError(f"Не удалось распознать дату: {date_str}") from None
+        return parse_date(date_str)
 
     def _format_single_date(self, date: datetime) -> str:
         if not date:

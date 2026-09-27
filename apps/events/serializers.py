@@ -1,10 +1,16 @@
 import msgspec
 
 from apps.core.serializers import DatabaseId
+from apps.events.enums import EventSortField, SortOrder
 
 
 class EventPathSchema(msgspec.Struct):
     event_id: DatabaseId
+
+
+class EventListQuerySchema(msgspec.Struct):
+    sort: EventSortField = EventSortField.STARTED_AT
+    order: SortOrder | None = None
 
 
 class EventImageSchema(msgspec.Struct):
