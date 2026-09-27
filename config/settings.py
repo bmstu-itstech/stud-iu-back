@@ -33,8 +33,6 @@ ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS") or [
     env.get("DOMAIN_NAME", "localhost")
 ]
 
-FORMS_EXPORT_JWT_SECRET = env.get("FORMS_EXPORT_JWT_SECRET", SECRET_KEY)
-
 
 # Application definition
 
@@ -67,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
+    "apps.core.middleware.JwtTokenMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

@@ -1,35 +1,23 @@
-from datetime import UTC, datetime, timedelta
-
-import jwt
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from apps.applications.export import EXPORT_SCOPE
+from apps.applications.jwt_service import create_export_token
 
 
 class Command(BaseCommand):
     help = (
         "Генерирует JWT-токен для экспорта анкет активистов: "
-        "GET /api/v0/forms/export/?token=<TOKEN>"
+        "GET /api/v0/application/forms/export/?token=<TOKEN>"
     )
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--days",
             type=int,
-            default=30,
+            default=None,
             help="Срок действия токена в днях (по умолчанию 30)",
         )
 
     def handle(self, *args, **options) -> None:
-        now = datetime.now(tz=UTC)
-        token = jwt.encode(
-            {
-                "scope": EXPORT_SCOPE,
-                "iat": now,
-                "exp": now + timedelta(days=options["days"]),
-            },
-            settings.FORMS_EXPORT_JWT_SECRET,
-            algorithm="HS256",
-        )
+        days = options["days"]
+        token = create_export_token(days) if days else create_export_token()
         self.stdout.write(token)

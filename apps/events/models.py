@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import CheckConstraint, Q
 
 from .enums import Precision
-from .utils import DateRange
+from .utils.date_utils import DateRange, parse_event_date
 
 
 class Events(models.Model):
@@ -44,6 +44,15 @@ class Events(models.Model):
         max_length=40,
         help_text="Дата начала мероприятия, например, 11.05.2006",
     )
+    start_date = models.DateTimeField(
+        "Дата начала",
+        blank=True,
+        null=True,
+        editable=False,
+        help_text=(
+            "Заполняется автоматически из «Дата начала» при сохранении"
+        ),
+    )
     end_datetime = models.CharField(
         "Дата конца",
         max_length=40,
@@ -60,6 +69,10 @@ class Events(models.Model):
             self.precision,
         )
         return date_object.range_display()
+
+    def save(self, *args, **kwargs) -> None:
+        self.start_date = parse_event_date(self.start_datetime)
+        super().save(*args, **kwargs)
 
     class Meta:
         abstract = True

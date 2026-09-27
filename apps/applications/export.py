@@ -1,15 +1,18 @@
 import csv
 from http import HTTPStatus
 from io import StringIO
+from typing import final
 
-import jwt
-from django.conf import settings
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpResponse
+from dmr import Controller, validate
+from dmr.metadata import ResponseSpec
+from dmr.plugins.msgspec import MsgspecSerializer
 
+from apps.core.middleware import require_jwt_auth
+
+from .jwt_service import EXPORT_SCOPE
 from .models import Application
 from .services import CATEGORY_MAP, TECH_TASK_MAP, VISUAL_CONTENT_MAP
-
-EXPORT_SCOPE = "forms_export"
 
 CSV_HEADERS = (
     "ФИО",
@@ -26,6 +29,7 @@ CSV_HEADERS = (
 
 
 def _labels(codes: list[str], mapping: dict[str, str]) -> str:
+    """Коды выбранных опций → человекочитаемые подписи через «; »."""
     return "; ".join(mapping.get(code, code) for code in codes)
 
 
@@ -44,27 +48,7 @@ def _application_row(application: Application) -> list[str]:
     ]
 
 
-def _error(detail: str, status: HTTPStatus) -> JsonResponse:
-    return JsonResponse({"detail": detail}, status=status)
-
-
-def forms_export_view(request: HttpRequest) -> HttpResponse:
-    token = request.GET.get("token")
-    if not token:
-        return _error("Token is missing", HTTPStatus.UNAUTHORIZED)
-
-    try:
-        payload = jwt.decode(
-            token,
-            settings.FORMS_EXPORT_JWT_SECRET,
-            algorithms=["HS256"],
-        )
-    except jwt.InvalidTokenError:
-        return _error("Invalid or expired token", HTTPStatus.UNAUTHORIZED)
-
-    if payload.get("scope") != EXPORT_SCOPE:
-        return _error("Token has insufficient scope", HTTPStatus.FORBIDDEN)
-
+def _csv_response() -> HttpResponse:
     buffer = StringIO()
     writer = csv.writer(buffer)
     writer.writerow(CSV_HEADERS)
@@ -77,3 +61,30 @@ def forms_export_view(request: HttpRequest) -> HttpResponse:
     )
     response["Content-Disposition"] = 'attachment; filename="applications.csv"'
     return response
+
+
+@final
+class FormsExportController(Controller[MsgspecSerializer]):
+
+    @validate(
+        ResponseSpec(
+            bytes,
+            status_code=HTTPStatus.OK,
+            description="CSV-файл с анкетами активистов",
+        ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.UNAUTHORIZED,
+            description="Токен отсутствует или невалиден",
+        ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.FORBIDDEN,
+            description="Недостаточный scope токена",
+        ),
+        validate_responses=False,
+    )
+    @require_jwt_auth(scope=EXPORT_SCOPE)
+    def get(self) -> HttpResponse:
+        """GET /api/v0/application/forms/export/?token=<JWT> — выгрузка анкет в CSV."""
+        return _csv_response()

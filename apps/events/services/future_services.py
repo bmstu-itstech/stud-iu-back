@@ -1,21 +1,17 @@
-from datetime import datetime
-
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+from django.db.models import F, QuerySet
 
 from apps.core.serializers import DatabaseId
 from apps.events.models import EventImages, FutureEvents
 from apps.events.serializers import FutureEventCreateSchema
-from apps.events.utils.date_utils import parse_event_date
 
 from .exceptions import EventNotFoundError
 
 
-def future_event_list_service() -> list[FutureEvents]:
-    events = list(FutureEvents.objects.prefetch_related("images"))
-    return sorted(
-        events,
-        key=lambda event: parse_event_date(event.start_datetime) or datetime.max,
+def future_event_list_service() -> QuerySet[FutureEvents]:
+    return FutureEvents.objects.prefetch_related("images").order_by(
+        F("start_date").asc(nulls_last=True)
     )
 
 
