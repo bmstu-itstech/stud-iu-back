@@ -1,15 +1,18 @@
 from http import HTTPStatus
 from typing import final, override
 
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from dmr import Body, Controller, Path, modify
+from dmr import Body, Controller, Path, Query, modify
 from dmr.endpoint import Endpoint
 from dmr.errors import ErrorType
 from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
+from apps.events.enums import SortOrder
 from apps.events.serializers import (
+    EventListQuerySchema,
     EventPathSchema,
     PastEventCreateSchema,
     PastEventSchema,
@@ -23,7 +26,7 @@ from apps.events.services import (
     past_event_update_service,
 )
 
-from .base import _images_to_schema
+from .base import _images_to_schema, _validation_error
 
 
 def _past_to_schema(event) -> PastEventSchema:
@@ -51,15 +54,33 @@ class PastEventListController(Controller[MsgspecSerializer]):
         MultiPartParser(),
     )
 
-    def get(self) -> list[PastEventSchema]:
-        """Получение списка всех сущностей PastEvent."""
-        return [_past_to_schema(e) for e in past_event_list_service()]
+    def get(self, parsed_query: Query[EventListQuerySchema]) -> list[PastEventSchema]:
+        """Получение списка всех сущностей PastEvent.
+
+        Сортировка: `sort=started_at|ended_at`, `order=asc|desc`.
+        """
+        events = past_event_list_service(
+            sort=parsed_query.sort,
+            order=parsed_query.order or SortOrder.DESC,
+        )
+        return [_past_to_schema(e) for e in events]
 
     def post(self, parsed_body: Body[PastEventCreateSchema]) -> PastEventSchema:
         """Создание новой сущности PastEvent."""
         images = self.request.FILES.getlist("images") or None
         event = past_event_create_service(parsed_body, images=images)
         return _past_to_schema(event)
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return _validation_error(self, exc)
+        return super().handle_error(endpoint, controller, exc)
 
 
 @final
@@ -115,4 +136,6 @@ class PastEventDetailController(Controller[MsgspecSerializer]):
                 self.format_error("Event not found", error_type=ErrorType.value_error),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+        if isinstance(exc, ValidationError):
+            return _validation_error(self, exc)
         return super().handle_error(endpoint, controller, exc)

@@ -1,6 +1,9 @@
 import uuid
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+FILE_EXTENSIONS = ("svg", "png", "jpg", "jpeg", "webp", "gif")
 
 
 class Partners(models.Model):
@@ -16,11 +19,12 @@ class Partners(models.Model):
     url = models.URLField(
         blank=True,
     )
-    image = models.ImageField(
+    image = models.FileField(
         "Изображение",
         upload_to="images/partners/",
         blank=True,
         null=True,
+        validators=[FileExtensionValidator(allowed_extensions=FILE_EXTENSIONS)],
     )
 
     class Meta:

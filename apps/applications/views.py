@@ -1,12 +1,17 @@
+import io
 from http import HTTPStatus
 from typing import final, override
 
-from django.http import HttpResponse
-from dmr import Body, Controller, Path, modify
+from django.http import FileResponse, HttpResponse
+from dmr import Body, Controller, Path, modify, validate
 from dmr.endpoint import Endpoint
 from dmr.errors import ErrorType
+from dmr.files import FileResponseSpec
 from dmr.metadata import ResponseSpec
-from dmr.plugins.msgspec import MsgspecSerializer
+from dmr.plugins.msgspec import MsgspecJsonRenderer, MsgspecSerializer
+from dmr.renderers import FileRenderer
+
+from apps.core.auth import QueryJWTSyncAuth
 
 from .models import Application
 from .serializers import (
@@ -22,6 +27,7 @@ from .services import (
     ApplicationNotFoundError,
     application_create_service,
     application_delete_service,
+    application_export_csv_service,
     application_get_service,
     application_list_service,
     application_update_service,
@@ -55,6 +61,25 @@ class ApplicationFormSchemaController(Controller[MsgspecSerializer]):
     def get(self) -> list[FormFieldSchema]:
         """Получение структуры формы."""
         return get_form_structure_service()
+
+
+@final
+class ApplicationExportController(Controller[MsgspecSerializer]):
+    """Класс для экспорта анкет."""
+
+    @validate(
+        FileResponseSpec(as_attachment=True),
+        auth=[QueryJWTSyncAuth()],
+        renderers=[MsgspecJsonRenderer(), FileRenderer("text/csv")],
+    )
+    def get(self) -> FileResponse:
+        """Экспорт всех сущностей Application в формате csv."""
+        return FileResponse(
+            io.BytesIO(application_export_csv_service()),
+            as_attachment=True,
+            filename="applications.csv",
+            content_type="text/csv",
+        )
 
 
 @final

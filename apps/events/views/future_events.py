@@ -1,15 +1,18 @@
 from http import HTTPStatus
 from typing import final, override
 
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from dmr import Body, Controller, Path, modify
+from dmr import Body, Controller, Path, Query, modify
 from dmr.endpoint import Endpoint
 from dmr.errors import ErrorType
 from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
+from apps.events.enums import SortOrder
 from apps.events.serializers import (
+    EventListQuerySchema,
     EventPathSchema,
     FutureEventCreateSchema,
     FutureEventSchema,
@@ -23,7 +26,7 @@ from apps.events.services import (
     future_event_update_service,
 )
 
-from .base import _images_to_schema
+from .base import _images_to_schema, _validation_error
 
 
 def _future_to_schema(event) -> FutureEventSchema:
@@ -51,15 +54,33 @@ class FutureEventListController(Controller[MsgspecSerializer]):
         MultiPartParser(),
     )
 
-    def get(self) -> list[FutureEventSchema]:
-        """Получение списка всех сущностей FutureEvent."""
-        return [_future_to_schema(e) for e in future_event_list_service()]
+    def get(self, parsed_query: Query[EventListQuerySchema]) -> list[FutureEventSchema]:
+        """Получение списка всех сущностей FutureEvent.
+
+        Сортировка: `sort=started_at|ended_at`, `order=asc|desc`.
+        """
+        events = future_event_list_service(
+            sort=parsed_query.sort,
+            order=parsed_query.order or SortOrder.ASC,
+        )
+        return [_future_to_schema(e) for e in events]
 
     def post(self, parsed_body: Body[FutureEventCreateSchema]) -> FutureEventSchema:
         """Создание новой сущности FutureEvent."""
         images = self.request.FILES.getlist("images") or None
         event = future_event_create_service(parsed_body, images=images)
         return _future_to_schema(event)
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return _validation_error(self, exc)
+        return super().handle_error(endpoint, controller, exc)
 
 
 @final
@@ -115,4 +136,6 @@ class FutureEventDetailController(Controller[MsgspecSerializer]):
                 self.format_error("Event not found", error_type=ErrorType.value_error),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+        if isinstance(exc, ValidationError):
+            return _validation_error(self, exc)
         return super().handle_error(endpoint, controller, exc)

@@ -1,16 +1,21 @@
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import QuerySet
 
 from apps.core.serializers import DatabaseId
-from apps.events.models import EventImages, FutureEvents
+from apps.events.enums import EventSortField, SortOrder
+from apps.events.models import EventImages, Events, FutureEvents
 from apps.events.serializers import FutureEventCreateSchema
+from apps.events.utils.sorting import sort_events
 
 from .exceptions import EventNotFoundError
 
 
-def future_event_list_service() -> QuerySet[FutureEvents]:
-    return FutureEvents.objects.prefetch_related("images").all()
+def future_event_list_service(
+    sort: EventSortField = EventSortField.STARTED_AT,
+    order: SortOrder = SortOrder.ASC,
+) -> list[Events]:
+    events = FutureEvents.objects.prefetch_related("images").all()
+    return sort_events(events, sort, order)
 
 
 def future_event_get_service(event_id: DatabaseId) -> FutureEvents:
@@ -31,7 +36,7 @@ def _create_future_event_images(
 def future_event_create_service(
     payload: FutureEventCreateSchema, images: list[UploadedFile] | None = None
 ) -> FutureEvents:
-    event = FutureEvents.objects.create(
+    event = FutureEvents(
         title=payload.title,
         description=payload.description,
         extended_description=payload.extended_description,
@@ -41,6 +46,8 @@ def future_event_create_service(
         end_datetime=payload.end_datetime,
         registration_link=payload.registration_link,
     )
+    event.clean()
+    event.save()
     if images:
         _create_future_event_images(event, images)
 
@@ -58,6 +65,7 @@ def _update_future_event_fields(
     event.start_datetime = payload.start_datetime
     event.end_datetime = payload.end_datetime
     event.registration_link = payload.registration_link
+    event.clean()
     event.save()
 
 

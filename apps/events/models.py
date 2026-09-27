@@ -1,10 +1,11 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
 
 from .enums import Precision
-from .utils import DateRange
+from .utils import DateRange, parse_date
 
 
 class Events(models.Model):
@@ -60,6 +61,19 @@ class Events(models.Model):
             self.precision,
         )
         return date_object.range_display()
+
+    def clean(self) -> None:
+        super().clean()
+
+        errors = {}
+        for field in ("start_datetime", "end_datetime"):
+            try:
+                parse_date(getattr(self, field))
+            except ValueError as exc:
+                errors[field] = str(exc)
+
+        if errors:
+            raise ValidationError(errors)
 
     class Meta:
         abstract = True

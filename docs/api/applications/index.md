@@ -219,6 +219,14 @@ POST /api/v0/application/
 "categories": ["programming", "partnership"],
 ```
 
+## Экспорт анкет в формате CSV
+
+```http
+GET /api/v0/application/export/?token={token}
+```
+
+Если токен не передан, неверный или истёк, возвращается `401`
+
 ## Получение сущности Application по её ID
 
 ```http

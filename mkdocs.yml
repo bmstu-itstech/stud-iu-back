@@ -4,6 +4,8 @@ nav:
   - Главная: index.md
   - API:
     - Applications: api/applications/index.md
+    - Auth: api/auth/index.md
+    - Events: api/events/index.md
 
 theme:
   name: material

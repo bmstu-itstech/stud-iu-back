@@ -1,3 +1,6 @@
+import csv
+import io
+
 from django.db.models import QuerySet
 
 from apps.core.serializers import DatabaseId
@@ -199,3 +202,56 @@ def application_delete_service(application_id: DatabaseId) -> None:
     deleted, _ = Application.objects.filter(pk=application_id).delete()
     if not deleted:
         raise ApplicationNotFoundError
+
+
+def _csv_cell(value: str | None) -> str:
+    if not value:
+        return ""
+    if value.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return f"'{value}"
+    return value
+
+
+def _csv_choices(values: list[str], label_map: dict[str, str]) -> str:
+    return ", ".join(item.label for item in map_to_choice_items(values, label_map))
+
+
+def application_export_csv_service() -> bytes:
+    """Возвращает все сущности Application в формате CSV."""
+    fields = Application._meta
+    header = [
+        fields.get_field(name).verbose_name
+        for name in (
+            "full_name",
+            "group",
+            "birth_date",
+            "telegram_url",
+            "vk_url",
+            "github_url",
+            "portfolio_url",
+            "categories",
+            "tech_tasks",
+            "visual_content_types",
+        )
+    ]
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(header)
+    for app in Application.objects.order_by("full_name"):
+        writer.writerow(
+            [
+                _csv_cell(app.full_name),
+                _csv_cell(app.group),
+                app.birth_date.strftime("%d.%m.%Y"),
+                _csv_cell(app.telegram_url),
+                _csv_cell(app.vk_url),
+                _csv_cell(app.github_url),
+                _csv_cell(app.portfolio_url),
+                _csv_choices(app.categories or [], CATEGORY_MAP),
+                _csv_choices(app.tech_tasks or [], TECH_TASK_MAP),
+                _csv_choices(app.visual_content_types or [], VISUAL_CONTENT_MAP),
+            ]
+        )
+
+    return buffer.getvalue().encode("utf-8")
