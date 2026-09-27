@@ -91,3 +91,12 @@ class DateRange:
             return f"{start_fmt} - {end_fmt}"
         else:
             return ""
+
+
+def parse_event_date(date_str: str | None) -> datetime | None:
+    if not date_str:
+        return None
+    try:
+        return parse(date_str, dayfirst=True, fuzzy=True)
+    except (ValueError, TypeError, OverflowError):
+        return None

@@ -1,16 +1,23 @@
+from datetime import datetime
+
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import QuerySet
 
 from apps.core.serializers import DatabaseId
 from apps.events.models import EventImages, PastEvents
 from apps.events.serializers import PastEventCreateSchema
+from apps.events.utils.date_utils import parse_event_date
 
 from .exceptions import EventNotFoundError
 
 
-def past_event_list_service() -> QuerySet[PastEvents]:
-    return PastEvents.objects.prefetch_related("images").all()
+def past_event_list_service() -> list[PastEvents]:
+    events = list(PastEvents.objects.prefetch_related("images"))
+    return sorted(
+        events,
+        key=lambda event: parse_event_date(event.start_datetime) or datetime.min,
+        reverse=True,
+    )
 
 
 def past_event_get_service(event_id: DatabaseId) -> PastEvents:
