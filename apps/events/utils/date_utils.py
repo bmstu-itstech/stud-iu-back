@@ -97,6 +97,9 @@ def parse_event_date(date_str: str | None) -> datetime | None:
     if not date_str:
         return None
     try:
-        return parse(date_str, dayfirst=True, fuzzy=True)
+        parsed = parse(date_str, dayfirst=True, fuzzy=True)
     except (ValueError, TypeError, OverflowError):
         return None
+    if parsed.tzinfo is not None:
+        parsed = parsed.replace(tzinfo=None)
+    return parsed
