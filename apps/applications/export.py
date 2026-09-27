@@ -29,7 +29,6 @@ CSV_HEADERS = (
 
 
 def _labels(codes: list[str], mapping: dict[str, str]) -> str:
-    """Коды выбранных опций → человекочитаемые подписи через «; »."""
     return "; ".join(mapping.get(code, code) for code in codes)
 
 
@@ -86,5 +85,4 @@ class FormsExportController(Controller[MsgspecSerializer]):
     )
     @require_jwt_auth(scope=EXPORT_SCOPE)
     def get(self) -> HttpResponse:
-        """GET /api/v0/application/forms/export/?token=<JWT> — выгрузка анкет в CSV."""
         return _csv_response()
