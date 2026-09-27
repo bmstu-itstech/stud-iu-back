@@ -26,7 +26,6 @@ CSV_HEADERS = (
 
 
 def _labels(codes: list[str], mapping: dict[str, str]) -> str:
-    """Коды выбранных опций → человекочитаемые подписи через «; »."""
     return "; ".join(mapping.get(code, code) for code in codes)
 
 
@@ -50,11 +49,6 @@ def _error(detail: str, status: HTTPStatus) -> JsonResponse:
 
 
 def forms_export_view(request: HttpRequest) -> HttpResponse:
-    """GET /api/v0/forms/export/?token=<JWT> — выгрузка анкет в CSV.
-
-    Токен подписывается HS256 секретом FORMS_EXPORT_JWT_SECRET и должен
-    содержать claim scope = EXPORT_SCOPE.
-    """
     token = request.GET.get("token")
     if not token:
         return _error("Token is missing", HTTPStatus.UNAUTHORIZED)
@@ -77,7 +71,6 @@ def forms_export_view(request: HttpRequest) -> HttpResponse:
     for application in Application.objects.order_by("full_name", "group"):
         writer.writerow(_application_row(application))
 
-    # utf-8-sig: BOM в начале файла, чтобы Excel корректно открывал кириллицу
     response = HttpResponse(
         buffer.getvalue().encode("utf-8-sig"),
         content_type="text/csv; charset=utf-8",
