@@ -1,18 +1,13 @@
 from dmr.routing import Router, path
 
-from .views import (
-    FutureEventDetailController,
-    FutureEventListController,
-    PastEventDetailController,
-    PastEventListController,
-)
+from .views import EventDetailController, EventsListController, PastEventsListController
 
 router = Router(
     prefix="events/",
     urls=[
-        path("", FutureEventListController.as_view()),
-        path("<uuid:event_id>/", FutureEventDetailController.as_view()),
-        path("past/", PastEventListController.as_view()),
-        path("past/<uuid:event_id>/", PastEventDetailController.as_view()),
+        path("", EventsListController.as_view()),
+        path("<uuid:event_id>/", EventDetailController.as_view()),
+        path("past/", PastEventsListController.as_view()),
+        path("past/<uuid:event_id>/", EventDetailController.as_view()),
     ],
 )

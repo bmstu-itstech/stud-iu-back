@@ -29,7 +29,9 @@ SECRET_KEY = env.require("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = [env.get("DOMAIN_NAME", "localhost")]
+ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS") or [
+    env.get("DOMAIN_NAME", "localhost")
+]
 
 
 # Application definition
@@ -63,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
+    "apps.core.middleware.JwtTokenMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

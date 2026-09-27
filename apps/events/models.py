@@ -1,10 +1,9 @@
 import uuid
 
 from django.db import models
-from django.db.models import CheckConstraint, Q
 
-from .enums import Precision
-from .utils import DateRange
+from .enums import EventType, Precision
+from .utils.date_utils import DateRange, parse_event_date
 
 
 class Events(models.Model):
@@ -39,10 +38,26 @@ class Events(models.Model):
         choices=Precision.choices,
         default=Precision.TIME,
     )
+    type = models.CharField(
+        "Тип мероприятия",
+        max_length=10,
+        choices=EventType.choices,
+        default=EventType.FUTURE,
+        help_text="Прошедшее или запланированное мероприятие",
+    )
     start_datetime = models.CharField(
         "Дата начала",
         max_length=40,
         help_text="Дата начала мероприятия, например, 11.05.2006",
+    )
+    start_date = models.DateTimeField(
+        "Дата начала",
+        blank=True,
+        null=True,
+        editable=False,
+        help_text=(
+            "Заполняется автоматически из «Дата начала» при сохранении"
+        ),
     )
     end_datetime = models.CharField(
         "Дата конца",
@@ -50,6 +65,16 @@ class Events(models.Model):
         blank=True,
         null=True,
         help_text="Дата конца мероприятия, например, 11.05.2006",
+    )
+    album_link = models.URLField(
+        "Ссылка на альбом",
+        blank=True,
+        null=True,
+    )
+    registration_link = models.URLField(
+        "Ссылка на регистрацию",
+        blank=True,
+        null=True,
     )
 
     @property
@@ -61,32 +86,9 @@ class Events(models.Model):
         )
         return date_object.range_display()
 
-    class Meta:
-        abstract = True
-
-
-class PastEvents(Events):
-    album_link = models.URLField(
-        "Ссылка на альбом",
-        blank=True,
-        null=True,
-    )
-
-    class Meta:
-        verbose_name = "Прошедшее мероприятие"
-        verbose_name_plural = "Прошедшие мероприятия"
-
-
-class FutureEvents(Events):
-    registration_link = models.URLField(
-        "Ссылка на регистрацию",
-        blank=True,
-        null=True,
-    )
-
-    class Meta:
-        verbose_name = "Запланированное мероприятие"
-        verbose_name_plural = "Запланированные мероприятия"
+    def save(self, *args, **kwargs) -> None:
+        self.start_date = parse_event_date(self.start_datetime)
+        super().save(*args, **kwargs)
 
 
 class EventImages(models.Model):
@@ -95,19 +97,10 @@ class EventImages(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    past_event = models.ForeignKey(
-        PastEvents,
+    event = models.ForeignKey(
+        Events,
         on_delete=models.CASCADE,
         related_name="images",
-        blank=True,
-        null=True,
-    )
-    future_event = models.ForeignKey(
-        FutureEvents,
-        on_delete=models.CASCADE,
-        related_name="images",
-        blank=True,
-        null=True,
     )
     image = models.ImageField(
         "Изображение",
@@ -115,14 +108,3 @@ class EventImages(models.Model):
         blank=True,
         null=True,
     )
-
-    class Meta:
-        constraints = [
-            CheckConstraint(
-                condition=(
-                    Q(past_event__isnull=False, future_event__isnull=True)
-                    | Q(past_event__isnull=True, future_event__isnull=False)
-                ),
-                name="only_one_event_link",
-            )
-        ]

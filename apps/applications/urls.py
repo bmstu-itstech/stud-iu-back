@@ -1,5 +1,6 @@
 from dmr.routing import Router, path
 
+from .export import FormsExportController
 from .views import (
     ApplicationController,
     ApplicationDetailController,
@@ -12,5 +13,6 @@ router = Router(
         path("schema/", ApplicationFormSchemaController.as_view()),
         path("", ApplicationController.as_view()),
         path("<uuid:application_id>/", ApplicationDetailController.as_view()),
+        path("forms/export/", FormsExportController.as_view()),
     ],
 )
