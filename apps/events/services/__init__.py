@@ -1,29 +1,17 @@
+from .events import (
+    event_create_service,
+    event_delete_service,
+    event_get_service,
+    event_update_service,
+    events_list_service,
+)
 from .exceptions import EventNotFoundError
-from .future_services import (
-    future_event_create_service,
-    future_event_delete_service,
-    future_event_get_service,
-    future_event_list_service,
-    future_event_update_service,
-)
-from .past_services import (
-    past_event_create_service,
-    past_event_delete_service,
-    past_event_get_service,
-    past_event_list_service,
-    past_event_update_service,
-)
 
 __all__ = [
-    "past_event_list_service",
-    "past_event_get_service",
-    "past_event_create_service",
-    "past_event_update_service",
-    "past_event_delete_service",
-    "future_event_list_service",
-    "future_event_get_service",
-    "future_event_create_service",
-    "future_event_update_service",
-    "future_event_delete_service",
+    "events_list_service",
+    "event_get_service",
+    "event_create_service",
+    "event_update_service",
+    "event_delete_service",
     "EventNotFoundError",
 ]

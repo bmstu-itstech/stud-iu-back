@@ -1,3 +1,5 @@
+from typing import Literal
+
 import msgspec
 
 from apps.core.serializers import DatabaseId
@@ -19,41 +21,23 @@ class EventSchema(msgspec.Struct):
     extended_description: str
     place: str
     precision: str
+    type: str
     start_datetime: str
     end_datetime: str | None
     date_range_display: str
-    images: list[EventImageSchema]
-
-
-class PastEventSchema(EventSchema):
-    """Схема для сущности PastEvent"""
-
     album_link: str | None
-
-
-class FutureEventSchema(EventSchema):
-    """Схема для сущности FutureEvent"""
-
     registration_link: str | None
+    images: list[EventImageSchema]
 
 
 class EventCreateSchema(msgspec.Struct):
     title: str
     start_datetime: str
+    type: Literal["past", "future"] = "future"
     description: str = ""
     extended_description: str = ""
     place: str = ""
     precision: str = "time"
     end_datetime: str | None = None
-
-
-class PastEventCreateSchema(EventCreateSchema):
-    """Схема для создания cущности PastEvent"""
-
     album_link: str | None = None
-
-
-class FutureEventCreateSchema(EventCreateSchema):
-    """Схема для создания cущности FutureEvent"""
-
     registration_link: str | None = None

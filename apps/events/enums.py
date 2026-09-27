@@ -6,3 +6,8 @@ class Precision(models.TextChoices):
     MONTH = "month", "Месяц"
     DAY = "day", "День"
     TIME = "time", "Время"
+
+
+class EventType(models.TextChoices):
+    PAST = "past", "Прошедшее"
+    FUTURE = "future", "Запланированное"
