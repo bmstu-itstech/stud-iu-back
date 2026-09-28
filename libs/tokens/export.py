@@ -13,7 +13,10 @@ def validate_secret(secret: str | None) -> str:
             f"Переменная окружения {TokenConfig.SECRET_ENV} не задана"
         )
     if len(secret) < TokenConfig.MIN_SECRET_LENGTH:
-        raise TokenSecretError()
+        raise TokenSecretError(
+            "Длина секрета для формирования jwt-токена должна быть не менее "
+            f"{TokenConfig.MIN_SECRET_LENGTH}, получено {len(secret)}",
+        )
     return secret
 
 
