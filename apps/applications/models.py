@@ -47,7 +47,7 @@ class Application(models.Model):
     full_name = models.CharField("ФИО", max_length=256)
     group = models.CharField("Учебная группа", max_length=64)
     birth_date = models.DateField("Дата рождения")
-    telegram_url = models.CharField("Никнейм в Telegram", max_length=32)
+    telegram = models.CharField("Никнейм в Telegram", max_length=32)
     github_url = models.URLField("Профиль на GitHub", blank=True, null=True)
     portfolio_url = models.URLField(
         "Портфолио по работе с визуальным контентом",

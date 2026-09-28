@@ -52,8 +52,7 @@ class ApplicationSchema(msgspec.Struct):
     full_name: str
     group: str
     birth_date: dt.date
-    telegram_url: str
-    vk_url: str
+    telegram: str
     github_url: str | None
     portfolio_url: str | None
 
@@ -68,8 +67,7 @@ class ApplicationCreateSchema(msgspec.Struct):
     full_name: str
     group: str
     birth_date: dt.date
-    telegram_url: str
-    vk_url: str
+    telegram: str
     github_url: str | None = None
     portfolio_url: str | None = None
 

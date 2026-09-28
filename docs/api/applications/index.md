@@ -59,17 +59,9 @@ class DependencySchema(msgspec.Struct):
         "depends_on": null
     },
     {
-        "key": "telegram_url",
-        "label": "Ссылка на Telegram",
-        "type": "url",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "vk_url",
-        "label": "Ссылка на профиль в VK",
-        "type": "url",
+        "key": "telegram",
+        "label": "Никнейм в Telegram",
+        "type": "text",
         "required": true,
         "options": null,
         "depends_on": null
@@ -92,8 +84,8 @@ class DependencySchema(msgspec.Struct):
         "required": false,
         "options": null,
         "depends_on": {
-        "field": "categories",
-        "contains": "content_creation"
+          "field": "categories",
+          "contains": "content_creation"
         }
     },
     {
@@ -203,8 +195,7 @@ POST /api/v0/application/
   "full_name": "string",
   "group": "string",
   "birth_date": "2026-08-29",
-  "telegram_url": "string",
-  "vk_url": "string",
+  "telegram": "string",
   "github_url": "string",
   "portfolio_url": "string",
   "categories": [],
