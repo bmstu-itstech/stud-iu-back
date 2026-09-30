@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from dateutil.parser import parse
+from django.utils import timezone
 
 from apps.events.enums import Precision
 
@@ -36,28 +36,71 @@ MONTH_CASES = {
 }
 
 
+def to_local(date: datetime | None) -> datetime | None:
+    if date is None:
+        return None
+
+    if timezone.is_naive(date):
+        return timezone.make_aware(date)
+    return timezone.localtime(date)
+
+
 def parse_date(date_str: str | None) -> datetime | None:
+    """Разбирает дату в формате ISO 8601 и переводит её в локальное время."""
     if not date_str:
         return None
 
     try:
-        return parse(date_str, dayfirst=True, fuzzy=True)
-    except ValueError, TypeError, OverflowError:
-        raise ValueError(f"Не удалось распознать дату: {date_str}") from None
+        return to_local(datetime.fromisoformat(date_str))
+    except ValueError:
+        raise ValueError(
+            f"Не удалось распознать дату: {date_str}. "
+            "Ожидается формат ISO 8601, например, 2006-11-05T18:30:00+03:00"
+        ) from None
+
+
+def truncate_date(date: datetime | None, precision: Precision) -> datetime | None:
+    date = to_local(date)
+    if date is None:
+        return None
+
+    if precision == Precision.YEAR:
+        return date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif precision == Precision.MONTH:
+        return date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif precision == Precision.DAY:
+        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif precision == Precision.TIME:
+        return date.replace(second=0, microsecond=0)
+    else:
+        return date
+
+
+def period_end(date: datetime | None, precision: Precision) -> datetime | None:
+    date = truncate_date(date, precision)
+    if date is None:
+        return None
+
+    if precision == Precision.YEAR:
+        return date.replace(year=date.year + 1)
+    elif precision == Precision.MONTH:
+        if date.month == 12:
+            return date.replace(year=date.year + 1, month=1)
+        return date.replace(month=date.month + 1)
+    elif precision == Precision.DAY:
+        return date + timedelta(days=1)
+    return date
 
 
 class DateRange:
-    def __init__(self, start: str, end: str, precision: Precision) -> None:
-        self.start: str = start
-        self.end: str = end
+    def __init__(
+        self, start: datetime, end: datetime | None, precision: Precision
+    ) -> None:
         self.precision: Precision = precision
-        self.start_date: datetime = self._parse_date(self.start)
-        self.end_date: datetime = self._parse_date(self.end)
+        self.start_date: datetime = to_local(start)
+        self.end_date: datetime | None = to_local(end)
 
-    def _parse_date(self, date_str: str) -> datetime | None:
-        return parse_date(date_str)
-
-    def _format_single_date(self, date: datetime) -> str:
+    def _format_single_date(self, date: datetime | None) -> str | None:
         if not date:
             return None
 
@@ -68,8 +111,10 @@ class DateRange:
         elif self.precision == Precision.DAY:
             return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year}"
         elif self.precision == Precision.TIME:
-            return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} \
-                {date.strftime('%H:%M')}"
+            return (
+                f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} "
+                f"{date.strftime('%H:%M')}"
+            )
         else:
             return str(date)
 
@@ -77,7 +122,7 @@ class DateRange:
         start_fmt = self._format_single_date(self.start_date)
         end_fmt = self._format_single_date(self.end_date)
 
-        if end_fmt is None:
+        if end_fmt is None or end_fmt == start_fmt:
             return f"{start_fmt}"
         elif start_fmt is not None:
             if (

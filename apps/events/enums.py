@@ -18,3 +18,8 @@ class EventSortField(StrEnum):
 class SortOrder(StrEnum):
     ASC = "asc"
     DESC = "desc"
+
+
+class EventPeriod(StrEnum):
+    PAST = "past"
+    FUTURE = "future"

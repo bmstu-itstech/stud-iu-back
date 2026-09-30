@@ -34,153 +34,173 @@ class DependencySchema(msgspec.Struct):
 
 ```json
 [
-    {
-        "key": "full_name",
-        "label": "ФИО",
-        "type": "text",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "group",
-        "label": "Учебная группа",
-        "type": "text",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "birth_date",
-        "label": "Дата рождения",
-        "type": "date",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "telegram_url",
-        "label": "Ссылка на Telegram",
-        "type": "url",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "vk_url",
-        "label": "Ссылка на профиль в VK",
-        "type": "url",
-        "required": true,
-        "options": null,
-        "depends_on": null
-    },
-    {
-        "key": "github_url",
-        "label": "Профиль на GitHub",
-        "type": "url",
-        "required": true,
-        "options": null,
-        "depends_on": {
-        "field": "categories",
-        "contains": "programming"
-        }
-    },
-    {
-        "key": "portfolio_url",
-        "label": "Ссылка на портфолио",
-        "type": "url",
-        "required": false,
-        "options": null,
-        "depends_on": {
-        "field": "categories",
-        "contains": "content_creation"
-        }
-    },
-    {
-        "key": "categories",
-        "label": "Какой из следующих видов деятельности вам наиболее интересен?",
-        "type": "multiple_choice",
-        "required": true,
-        "options": [
-        {
-            "value": "programming",
-            "label": "Решение сложных технических задач, завязанных на программировании"
-        },
-        {
-            "value": "event_planning",
-            "label": "Планирование и организация мероприятий"
-        },
-        {
-            "value": "content_creation",
-            "label": "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг, Графика, Дизайн)"
-        },
-        {
-            "value": "team_building",
-            "label": "Работа с людьми и командообразование"
-        },
-        {
-            "value": "partnership",
-            "label": "Взаимодействие с партнерами, ведение деловых переговоров"
-        },
-        {
-            "value": "event_tech_support",
-            "label": "Поддержка и помощь в решении технических задач мероприятий (Настройка звука, модерация презентации, расстановка оборудования, т.д)"
-        }
-        ],
-        "depends_on": null
-    },
-    {
-        "key": "tech_tasks",
-        "label": "В решении каких технических задач вы заинтересованы?",
-        "type": "multiple_choice",
-        "required": true,
-        "options": [
-        {
-            "value": "web",
-            "label": "Разработка сайтов"
-        },
-        {
-            "value": "bots",
-            "label": "Разработка ботов"
-        },
-        {
-            "value": "games",
-            "label": "Разработка игр"
-        }
-        ],
-        "depends_on": {
-        "field": "categories",
-        "contains": "programming"
-        }
-    },
-    {
-        "key": "visual_content_types",
-        "label": "Какой вид создания визуального контента вас интересует?",
-        "type": "multiple_choice",
-        "required": true,
-        "options": [
-        {
-            "value": "smm",
-            "label": "СММ"
-        },
-        {
-            "value": "photo",
-            "label": "Фото"
-        },
-        {
-            "value": "video",
-            "label": "Видео"
-        },
-        {
-            "value": "design",
-            "label": "Дизайн"
-        }
-        ],
-        "depends_on": {
-        "field": "categories",
-        "contains": "content_creation"
-        }
+  {
+    "key": "full_name",
+    "label": "ФИО",
+    "type": "text",
+    "required": true,
+    "placeholder": "Иванов Иван Иванович",
+    "pattern": null,
+    "options": null,
+    "depends_on": null
+  },
+  {
+    "key": "group",
+    "label": "Учебная группа",
+    "type": "text",
+    "required": true,
+    "placeholder": "ИУ6-42Б",
+    "pattern": "^((((ФМОП-)?(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР)(К)?[1-9]\\d?)|(ЮР(\\.ДК)?))(К)?[ИЦ]?-(((1[0-2])|(\\d))((\\d)|(.\\d\\d+))([АМБ]?(В)?)))$",
+    "options": null,
+    "depends_on": null
+  },
+  {
+    "key": "birth_date",
+    "label": "Дата рождения",
+    "type": "date",
+    "required": true,
+    "placeholder": null,
+    "pattern": null,
+    "options": null,
+    "depends_on": null
+  },
+  {
+    "key": "telegram_url",
+    "label": "Ссылка на Telegram",
+    "type": "url",
+    "required": true,
+    "placeholder": "https://t.me/username",
+    "pattern": "^https://t\\.me/[A-Za-z0-9_]{3,32}/?$",
+    "options": null,
+    "depends_on": null
+  },
+  {
+    "key": "vk_url",
+    "label": "Ссылка на профиль в VK",
+    "type": "url",
+    "required": true,
+    "placeholder": "https://vk.ru/username",
+    "pattern": "^https://vk\\.(ru|com)/[A-Za-z0-9_]{3,32}/?$",
+    "options": null,
+    "depends_on": null
+  },
+  {
+    "key": "github_url",
+    "label": "Профиль на GitHub",
+    "type": "url",
+    "required": true,
+    "placeholder": "https://github.com/username",
+    "pattern": "^https://github\\.com/[A-Za-z0-9-]{1,39}/?$",
+    "options": null,
+    "depends_on": {
+      "field": "categories",
+      "contains": "programming"
     }
+  },
+  {
+    "key": "portfolio_url",
+    "label": "Ссылка на портфолио",
+    "type": "url",
+    "required": false,
+    "placeholder": "https://example.com/portfolio",
+    "pattern": null,
+    "options": null,
+    "depends_on": {
+      "field": "categories",
+      "contains": "content_creation"
+    }
+  },
+  {
+    "key": "categories",
+    "label": "Какой из следующих видов деятельности вам наиболее интересен?",
+    "type": "multiple_choice",
+    "required": true,
+    "placeholder": null,
+    "pattern": null,
+    "options": [
+      {
+        "value": "programming",
+        "label": "Решение сложных технических задач, завязанных на программировании"
+      },
+      {
+        "value": "event_planning",
+        "label": "Планирование и организация мероприятий"
+      },
+      {
+        "value": "content_creation",
+        "label": "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг,                 Графика, Дизайн)"
+      },
+      {
+        "value": "team_building",
+        "label": "Работа с людьми и командообразование"
+      },
+      {
+        "value": "partnership",
+        "label": "Взаимодействие с партнерами, ведение деловых переговоров"
+      },
+      {
+        "value": "event_tech_support",
+        "label": "Поддержка и помощь в решении технических задач мероприятий (                Настройка звука, модерация презентации, расстановка оборудования, т.д)"
+      }
+    ],
+    "depends_on": null
+  },
+  {
+    "key": "tech_tasks",
+    "label": "В решении каких технических задач вы заинтересованы?",
+    "type": "multiple_choice",
+    "required": true,
+    "placeholder": null,
+    "pattern": null,
+    "options": [
+      {
+        "value": "web",
+        "label": "Разработка сайтов"
+      },
+      {
+        "value": "bots",
+        "label": "Разработка ботов"
+      },
+      {
+        "value": "games",
+        "label": "Разработка игр"
+      }
+    ],
+    "depends_on": {
+      "field": "categories",
+      "contains": "programming"
+    }
+  },
+  {
+    "key": "visual_content_types",
+    "label": "Какой вид создания визуального контента вас интересует?",
+    "type": "multiple_choice",
+    "required": true,
+    "placeholder": null,
+    "pattern": null,
+    "options": [
+      {
+        "value": "smm",
+        "label": "СММ"
+      },
+      {
+        "value": "photo",
+        "label": "Фото"
+      },
+      {
+        "value": "video",
+        "label": "Видео"
+      },
+      {
+        "value": "design",
+        "label": "Дизайн"
+      }
+    ],
+    "depends_on": {
+      "field": "categories",
+      "contains": "content_creation"
+    }
+  }
 ]
 ```
 
