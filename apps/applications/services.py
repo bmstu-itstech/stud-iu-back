@@ -50,20 +50,12 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             required=True,
         ),
         FormFieldSchema(
-            key="telegram_url",
-            label="Ссылка на Telegram",
-            type=FieldType.URL,
+            key="telegram",
+            label="Имя пользователя в Telegram",
+            type=FieldType.TEXT,
             required=True,
-            placeholder="https://t.me/username",
-            pattern=r"^https://t\.me/[A-Za-z0-9_]{3,32}/?$",
-        ),
-        FormFieldSchema(
-            key="vk_url",
-            label="Ссылка на профиль в VK",
-            type=FieldType.URL,
-            required=True,
-            placeholder="https://vk.ru/username",
-            pattern=r"^https://vk\.(ru|com)/[A-Za-z0-9_]{3,32}/?$",
+            placeholder="@username",
+            pattern=r"^@[A-Za-z0-9_]{3,32}$",
         ),
         FormFieldSchema(
             key="github_url",
@@ -161,8 +153,7 @@ def application_create_service(payload: ApplicationCreateSchema) -> Application:
         "full_name": payload.full_name,
         "group": payload.group,
         "birth_date": payload.birth_date,
-        "telegram_url": payload.telegram_url,
-        "vk_url": payload.vk_url,
+        "telegram": payload.telegram,
         "github_url": payload.github_url,
         "portfolio_url": payload.portfolio_url,
         "categories": payload.categories,
@@ -182,8 +173,7 @@ def application_update_service(
     app.full_name = payload.full_name
     app.group = payload.group
     app.birth_date = payload.birth_date
-    app.telegram_url = payload.telegram_url
-    app.vk_url = payload.vk_url
+    app.telegram = payload.telegram
     app.github_url = payload.github_url
     app.portfolio_url = payload.portfolio_url
     app.categories = payload.categories
@@ -225,8 +215,7 @@ def application_export_csv_service() -> bytes:
             "full_name",
             "group",
             "birth_date",
-            "telegram_url",
-            "vk_url",
+            "telegram",
             "github_url",
             "portfolio_url",
             "categories",
@@ -244,8 +233,7 @@ def application_export_csv_service() -> bytes:
                 _csv_cell(app.full_name),
                 _csv_cell(app.group),
                 app.birth_date.strftime("%d.%m.%Y"),
-                _csv_cell(app.telegram_url),
-                _csv_cell(app.vk_url),
+                _csv_cell(app.telegram),
                 _csv_cell(app.github_url),
                 _csv_cell(app.portfolio_url),
                 _csv_choices(app.categories or [], CATEGORY_MAP),

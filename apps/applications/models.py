@@ -15,8 +15,8 @@ class Application(models.Model):
         )
         CONTENT_CREATION = (
             "content_creation",
-            "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг, \
-                Графика, Дизайн)",
+            "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг, "
+            "Графика, Дизайн)",
         )
         TEAM_BUILDING = (
             "team_building",
@@ -28,8 +28,8 @@ class Application(models.Model):
         )
         EVENT_TECH_SUPPORT = (
             "event_tech_support",
-            "Поддержка и помощь в решении технических задач мероприятий (\
-                Настройка звука, модерация презентации, расстановка оборудования, т.д)",
+            "Поддержка и помощь в решении технических задач мероприятий ("
+            "настройка звука, модерация презентации, расстановка оборудования, т.д)",
         )
 
     class TechTask(models.TextChoices):
@@ -47,8 +47,7 @@ class Application(models.Model):
     full_name = models.CharField("ФИО", max_length=256)
     group = models.CharField("Учебная группа", max_length=64)
     birth_date = models.DateField("Дата рождения")
-    telegram_url = models.URLField("Ссылка на Telegram")
-    vk_url = models.URLField("Ссылка на VK")
+    telegram = models.CharField("Никнейм в Telegram", max_length=32)
     github_url = models.URLField("Профиль на GitHub", blank=True, null=True)
     portfolio_url = models.URLField(
         "Портфолио по работе с визуальным контентом",

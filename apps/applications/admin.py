@@ -11,9 +11,9 @@ class ApplicationAdmin(admin.ModelAdmin):
         "group",
         "display_categories",
         "birth_date",
-        "telegram_url",
+        "telegram",
     )
-    search_fields = ("full_name", "group", "telegram_url")
+    search_fields = ("full_name", "group", "telegram")
     ordering = ("full_name",)
 
     @admin.display(description="Направления")

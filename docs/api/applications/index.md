@@ -65,22 +65,12 @@ class DependencySchema(msgspec.Struct):
     "depends_on": null
   },
   {
-    "key": "telegram_url",
-    "label": "Ссылка на Telegram",
-    "type": "url",
+    "key": "telegram",
+    "label": "Имя пользователя в Telegram",
+    "type": "text",
     "required": true,
-    "placeholder": "https://t.me/username",
-    "pattern": "^https://t\\.me/[A-Za-z0-9_]{3,32}/?$",
-    "options": null,
-    "depends_on": null
-  },
-  {
-    "key": "vk_url",
-    "label": "Ссылка на профиль в VK",
-    "type": "url",
-    "required": true,
-    "placeholder": "https://vk.ru/username",
-    "pattern": "^https://vk\\.(ru|com)/[A-Za-z0-9_]{3,32}/?$",
+    "placeholder": "@username",
+    "pattern": "^@[A-Za-z0-9_]{3,32}$",
     "options": null,
     "depends_on": null
   },
@@ -128,7 +118,7 @@ class DependencySchema(msgspec.Struct):
       },
       {
         "value": "content_creation",
-        "label": "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг,                 Графика, Дизайн)"
+        "label": "Создание визуального контента (СММ, Фото, Видео, Клипмейкинг, Графика, Дизайн)"
       },
       {
         "value": "team_building",
@@ -140,7 +130,7 @@ class DependencySchema(msgspec.Struct):
       },
       {
         "value": "event_tech_support",
-        "label": "Поддержка и помощь в решении технических задач мероприятий (                Настройка звука, модерация презентации, расстановка оборудования, т.д)"
+        "label": "Поддержка и помощь в решении технических задач мероприятий (настройка звука, модерация презентации, расстановка оборудования, т.д)"
       }
     ],
     "depends_on": null
@@ -223,8 +213,7 @@ POST /api/v0/application/
   "full_name": "string",
   "group": "string",
   "birth_date": "2026-08-29",
-  "telegram_url": "string",
-  "vk_url": "string",
+  "telegram": "string",
   "github_url": "string",
   "portfolio_url": "string",
   "categories": [],

@@ -29,7 +29,7 @@ SECRET_KEY = env.require("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS")
+ALLOWED_HOSTS = [env.get("DOMAIN_NAME", "localhost")]
 
 
 # Application definition
@@ -162,3 +162,9 @@ AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
