@@ -20,7 +20,7 @@ class EventsAdmin(admin.ModelAdmin):
         "has_album",
         "images_count",
     )
-    search_fields = ("title", "description", "place")
+    search_fields = ("title", "slug", "description", "place")
     ordering = ("-start_datetime",)
     inlines = [EventImagesInline]
 

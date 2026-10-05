@@ -5,3 +5,4 @@ from .date_utils import (
     to_local,
     truncate_date,
 )
+from .slug_utils import SLUG_MAX_LENGTH, make_slug

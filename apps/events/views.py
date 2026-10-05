@@ -29,40 +29,6 @@ from .services import (
 from .utils import to_local
 
 
-def _to_schema(event: Events) -> EventSchema:
-    return EventSchema(
-        id=event.pk,
-        title=event.title,
-        description=event.description,
-        extended_description=event.extended_description,
-        place=event.place,
-        precision=event.precision,
-        start_datetime=to_local(event.start_datetime),
-        end_datetime=to_local(event.end_datetime),
-        date_range_display=event.date_range_display,
-        images=[
-            EventImageSchema(
-                id=image.pk,
-                image=image.image.url if image.image else None,
-            )
-            for image in event.images.all()
-        ],
-        album_link=event.album_link,
-        registration_link=event.registration_link,
-    )
-
-
-def _validation_error(controller: Controller, exc: ValidationError) -> HttpResponse:
-    detail = [
-        {"msg": messages[0], "loc": [field], "type": ErrorType.value_error}
-        for field, messages in exc.message_dict.items()
-    ]
-    return controller.to_error(
-        {"detail": detail},
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-
 @final
 class EventListController(Controller[MsgspecSerializer]):
     """Класс для взаимодействия с коллекцией сущностей Event."""
@@ -130,28 +96,28 @@ class EventDetailController(Controller[MsgspecSerializer]):
     )
 
     def get(self, parsed_path: Path[EventPathSchema]) -> EventSchema:
-        """Получение сущности Event по её ID."""
-        return _to_schema(event_get_service(parsed_path.event_id))
+        """Получение сущности Event."""
+        return _to_schema(event_get_service(parsed_path.event_ref))
 
     def put(
         self,
         parsed_path: Path[EventPathSchema],
         parsed_body: Body[EventCreateSchema],
     ) -> EventSchema:
-        """Обновление существующей сущности Event по её ID."""
+        """Обновление сущности Event."""
         images = (
             self.request.FILES.getlist("images")
             if "images" in self.request.FILES
             else None
         )
         return _to_schema(
-            event_update_service(parsed_path.event_id, parsed_body, images=images)
+            event_update_service(parsed_path.event_ref, parsed_body, images=images)
         )
 
     @modify(status_code=HTTPStatus.NO_CONTENT)
     def delete(self, parsed_path: Path[EventPathSchema]) -> None:
-        """Удаление сущности Event по её ID."""
-        event_delete_service(parsed_path.event_id)
+        """Удаление сущности Event."""
+        event_delete_service(parsed_path.event_ref)
 
     @override
     def handle_error(
@@ -171,3 +137,38 @@ class EventDetailController(Controller[MsgspecSerializer]):
         if isinstance(exc, ValidationError):
             return _validation_error(self, exc)
         return super().handle_error(endpoint, controller, exc)
+
+
+def _to_schema(event: Events) -> EventSchema:
+    return EventSchema(
+        id=event.pk,
+        slug=event.slug,
+        title=event.title,
+        description=event.description,
+        extended_description=event.extended_description,
+        place=event.place,
+        precision=event.precision,
+        start_datetime=to_local(event.start_datetime),
+        end_datetime=to_local(event.end_datetime),
+        date_range_display=event.date_range_display,
+        images=[
+            EventImageSchema(
+                id=image.pk,
+                image=image.image.url if image.image else None,
+            )
+            for image in event.images.all()
+        ],
+        album_link=event.album_link,
+        registration_link=event.registration_link,
+    )
+
+
+def _validation_error(controller: Controller, exc: ValidationError) -> HttpResponse:
+    detail = [
+        {"msg": messages[0], "loc": [field], "type": ErrorType.value_error}
+        for field, messages in exc.message_dict.items()
+    ]
+    return controller.to_error(
+        {"detail": detail},
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

@@ -1,3 +1,5 @@
+import uuid
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -6,7 +8,6 @@ from django.db.models import F, QuerySet
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.core.serializers import DatabaseId
 from apps.events.enums import EventPeriod, EventSortField, SortOrder
 from apps.events.models import EventImages, Events
 from apps.events.serializers import EventCreateSchema
@@ -20,6 +21,10 @@ def event_list_service(
     sort: EventSortField = EventSortField.STARTED_AT,
     order: SortOrder | None = None,
 ) -> QuerySet[Events]:
+    """Возвращает мероприятия за период, отсортированные по дате.
+
+    По умолчанию прошедшие идут от новых к старым, остальные - от ближайших.
+    """
     events = Events.objects.prefetch_related("images").annotate(
         ended_at=Coalesce("end_datetime", "start_datetime"),
     )
@@ -39,68 +44,19 @@ def event_list_service(
     )
 
 
-def event_get_service(event_id: DatabaseId) -> Events:
-    """Возвращает сущность Event по её ID.
+def event_get_service(event_ref: str) -> Events:
+    """Возвращает мероприятие.
 
-    Если сущность не найдена, возникает ошибка EventNotFoundError.
+    Если мероприятие не найдено, возникает ошибка EventNotFoundError.
     """
-    try:
-        return Events.objects.prefetch_related("images").get(pk=event_id)
-    except Events.DoesNotExist:
-        raise EventNotFoundError from None
-
-
-def _validate_event_images(images: list[UploadedFile]) -> None:
-    image_field = forms.ImageField()
-    for image in images:
-        try:
-            image_field.clean(image)
-        except ValidationError as exc:
-            raise ValidationError(
-                {"images": f"{image.name}: {exc.messages[0]}"}
-            ) from None
-
-
-def _create_event_images(event: Events, images: list[UploadedFile]) -> None:
-    for image in images:
-        EventImages.objects.create(event=event, image=image)
-
-
-def _parse_event_dates(payload: EventCreateSchema) -> dict:
-    dates = {}
-    errors = {}
-    for field in ("start_datetime", "end_datetime"):
-        try:
-            dates[field] = parse_date(getattr(payload, field))
-        except ValueError as exc:
-            errors[field] = str(exc)
-
-    if errors:
-        raise ValidationError(errors)
-    return dates
-
-
-def _fill_event_fields(event: Events, payload: EventCreateSchema) -> None:
-    dates = _parse_event_dates(payload)
-
-    event.title = payload.title
-    event.description = payload.description
-    event.extended_description = payload.extended_description
-    event.place = payload.place
-    event.precision = payload.precision
-    event.start_datetime = dates["start_datetime"]
-    event.end_datetime = dates["end_datetime"]
-    event.album_link = payload.album_link
-    event.registration_link = payload.registration_link
-    event.full_clean()
-    event.save()
+    return _get_event(event_ref, Events.objects.prefetch_related("images"))
 
 
 @transaction.atomic
 def event_create_service(
     payload: EventCreateSchema, images: list[UploadedFile] | None = None
 ) -> Events:
-    """Создаёт новую сущность Event."""
+    """Создаёт мероприятие."""
     if images:
         _validate_event_images(images)
 
@@ -115,18 +71,15 @@ def event_create_service(
 
 @transaction.atomic
 def event_update_service(
-    event_id: DatabaseId,
+    event_ref: str,
     payload: EventCreateSchema,
     images: list[UploadedFile] | None = None,
 ) -> Events:
-    """Обновляет существующую сущность Event.
+    """Обновляет мероприятие.
 
-    Если сущность не найдена, возникает ошибка EventNotFoundError.
+    Если мероприятие не найдено, возникает ошибка EventNotFoundError.
     """
-    try:
-        event = Events.objects.get(pk=event_id)
-    except Events.DoesNotExist:
-        raise EventNotFoundError from None
+    event = _get_event(event_ref, Events.objects.all())
 
     if images:
         _validate_event_images(images)
@@ -140,11 +93,70 @@ def event_update_service(
     return event
 
 
-def event_delete_service(event_id: DatabaseId) -> None:
-    """Удаляет сущность Event по её ID.
+def event_delete_service(event_ref: str) -> None:
+    """Удаляет мероприятие.
 
-    Если сущность не найдена, возникает ошибка EventNotFoundError.
+    Если мероприятие не найдено, возникает ошибка EventNotFoundError.
     """
-    deleted, _ = Events.objects.filter(pk=event_id).delete()
-    if not deleted:
-        raise EventNotFoundError
+    _get_event(event_ref, Events.objects.all()).delete()
+
+
+def _get_event(event_ref: str, events: QuerySet[Events]) -> Events:
+    """Поиск мероприятия."""
+    try:
+        return events.get(slug=event_ref)
+    except Events.DoesNotExist:
+        pass
+
+    try:
+        return events.get(pk=uuid.UUID(event_ref))
+    except ValueError, Events.DoesNotExist:
+        raise EventNotFoundError from None
+
+
+def _validate_event_images(images: list[UploadedFile]) -> None:
+    image_field = forms.ImageField()
+    for image in images:
+        try:
+            image_field.clean(image)
+        except ValidationError as exc:
+            raise ValidationError(
+                {"images": f"{image.name}: {exc.messages[0]}"}
+            ) from None
+
+
+def _fill_event_fields(event: Events, payload: EventCreateSchema) -> None:
+    dates = _parse_event_dates(payload)
+
+    event.title = payload.title
+    if payload.slug is not None:
+        event.slug = payload.slug
+    event.description = payload.description
+    event.extended_description = payload.extended_description
+    event.place = payload.place
+    event.precision = payload.precision
+    event.start_datetime = dates["start_datetime"]
+    event.end_datetime = dates["end_datetime"]
+    event.album_link = payload.album_link
+    event.registration_link = payload.registration_link
+    event.full_clean()
+    event.save()
+
+
+def _parse_event_dates(payload: EventCreateSchema) -> dict:
+    dates = {}
+    errors = {}
+    for field in ("start_datetime", "end_datetime"):
+        try:
+            dates[field] = parse_date(getattr(payload, field), payload.precision)
+        except ValueError as exc:
+            errors[field] = str(exc)
+
+    if errors:
+        raise ValidationError(errors)
+    return dates
+
+
+def _create_event_images(event: Events, images: list[UploadedFile]) -> None:
+    for image in images:
+        EventImages.objects.create(event=event, image=image)

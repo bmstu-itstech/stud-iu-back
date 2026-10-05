@@ -6,6 +6,6 @@ router = Router(
     prefix="events/",
     urls=[
         path("", EventListController.as_view()),
-        path("<uuid:event_id>/", EventDetailController.as_view()),
+        path("<str:event_ref>/", EventDetailController.as_view()),
     ],
 )

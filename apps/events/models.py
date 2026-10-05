@@ -4,7 +4,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from .enums import Precision
-from .utils import DateRange, period_end, truncate_date
+from .utils import (
+    SLUG_MAX_LENGTH,
+    DateRange,
+    make_slug,
+    period_end,
+    truncate_date,
+)
 
 
 class Events(models.Model):
@@ -16,6 +22,15 @@ class Events(models.Model):
     title = models.CharField(
         "Название",
         max_length=256,
+    )
+    slug = models.SlugField(
+        "Короткая ссылка",
+        max_length=SLUG_MAX_LENGTH,
+        unique=True,
+        blank=True,
+        error_messages={
+            "unique": "Мероприятие с такой ссылкой уже существует",
+        },
     )
     description = models.CharField(
         "Описание",
@@ -67,46 +82,56 @@ class Events(models.Model):
         null=True,
     )
 
-    @property
-    def date_range_display(self):
-        date_object = DateRange(
-            self.start_datetime,
-            self.end_datetime,
-            self.precision,
-        )
-        return date_object.range_display()
+    class Meta:
+        verbose_name = "Мероприятие"
+        verbose_name_plural = "Мероприятия"
 
-    def _truncate_dates(self) -> None:
-        self.start_datetime = truncate_date(self.start_datetime, self.precision)
-        self.end_datetime = truncate_date(self.end_datetime, self.precision)
+    def __str__(self) -> str:
+        return self.title
 
     def clean(self) -> None:
         super().clean()
         self._truncate_dates()
+        self._fill_slug()
+
+        errors = {}
+        if not self.slug:
+            errors["slug"] = "Не удалось составить ссылку из названия"
 
         if (
             self.start_datetime
             and self.end_datetime
             and self.end_datetime < self.start_datetime
         ):
-            raise ValidationError(
-                {"end_datetime": "Дата конца не может быть раньше даты начала"}
-            )
+            errors["end_datetime"] = "Дата завершения не может быть раньше даты начала"
+
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs) -> None:
         self._truncate_dates()
+        self._fill_slug()
         self.finished_at = period_end(
             self.end_datetime or self.start_datetime,
             self.precision,
         )
         super().save(*args, **kwargs)
 
-    def __str__(self) -> str:
-        return self.title
+    @property
+    def date_range_display(self) -> str:
+        return DateRange(
+            self.start_datetime,
+            self.end_datetime,
+            self.precision,
+        ).range_display()
 
-    class Meta:
-        verbose_name = "Мероприятие"
-        verbose_name_plural = "Мероприятия"
+    def _truncate_dates(self) -> None:
+        self.start_datetime = truncate_date(self.start_datetime, self.precision)
+        self.end_datetime = truncate_date(self.end_datetime, self.precision)
+
+    def _fill_slug(self) -> None:
+        if not self.slug:
+            self.slug = make_slug(self.title)
 
 
 class EventImages(models.Model):

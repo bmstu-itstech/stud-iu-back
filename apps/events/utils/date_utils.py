@@ -36,27 +36,69 @@ MONTH_CASES = {
 }
 
 
-def to_local(date: datetime | None) -> datetime | None:
-    if date is None:
-        return None
-
-    if timezone.is_naive(date):
-        return timezone.make_aware(date)
-    return timezone.localtime(date)
-
-
-def parse_date(date_str: str | None) -> datetime | None:
-    """Разбирает дату в формате ISO 8601 и переводит её в локальное время."""
+def parse_date(date_str: str | None, precision: str | None = None) -> datetime | None:
     if not date_str:
         return None
 
+    value = date_str.strip()
     try:
-        return to_local(datetime.fromisoformat(date_str))
+        try:
+            date, detail = _parse_iso_date(value)
+        except ValueError:
+            date, detail = _parse_ru_date(value)
     except ValueError:
+        raise ValueError(f"Не удалось распознать дату: {date_str}.") from None
+
+    if precision in _DETAIL_LEVEL and _DETAIL_LEVEL[detail] < _DETAIL_LEVEL[precision]:
+        precision = Precision(precision)
         raise ValueError(
-            f"Не удалось распознать дату: {date_str}. "
-            "Ожидается формат ISO 8601, например, 2006-11-05T18:30:00+03:00"
-        ) from None
+            f'Для точности "{precision.label}" дата указана не полностью: {date_str}.'
+        )
+    return to_local(date)
+
+
+def _parse_iso_date(value: str) -> tuple[datetime, Precision]:
+    date = datetime.fromisoformat(value)
+    detail = Precision.TIME if "T" in value or " " in value else Precision.DAY
+    return date, detail
+
+
+def _parse_ru_date(value: str) -> tuple[datetime, Precision]:
+    value = _month_names_to_numbers(value)
+    for date_format, detail in _RU_FORMATS:
+        try:
+            return datetime.strptime(value, date_format), detail
+        except ValueError:
+            continue
+    raise ValueError(value)
+
+
+def _month_names_to_numbers(value: str) -> str:
+    return " ".join(str(_MONTHS.get(word, word)) for word in value.lower().split())
+
+
+_MONTHS = {
+    name: number for case in MONTH_CASES.values() for number, name in case.items()
+}
+
+_RU_FORMATS = (
+    ("%d.%m.%Y %H:%M", Precision.TIME),
+    ("%d.%m.%Y", Precision.DAY),
+    ("%m.%Y", Precision.MONTH),
+    ("%Y-%m", Precision.MONTH),
+    ("%Y", Precision.YEAR),
+    ("%d %m %Y %H:%M", Precision.TIME),
+    ("%d %m %Y", Precision.DAY),
+    ("%m %Y", Precision.MONTH),
+)
+
+
+_DETAIL_LEVEL = {
+    Precision.YEAR: 0,
+    Precision.MONTH: 1,
+    Precision.DAY: 2,
+    Precision.TIME: 3,
+}
 
 
 def truncate_date(date: datetime | None, precision: Precision) -> datetime | None:
@@ -72,8 +114,7 @@ def truncate_date(date: datetime | None, precision: Precision) -> datetime | Non
         return date.replace(hour=0, minute=0, second=0, microsecond=0)
     elif precision == Precision.TIME:
         return date.replace(second=0, microsecond=0)
-    else:
-        return date
+    return date
 
 
 def period_end(date: datetime | None, precision: Precision) -> datetime | None:
@@ -100,24 +141,6 @@ class DateRange:
         self.start_date: datetime = to_local(start)
         self.end_date: datetime | None = to_local(end)
 
-    def _format_single_date(self, date: datetime | None) -> str | None:
-        if not date:
-            return None
-
-        if self.precision == Precision.YEAR:
-            return date.strftime("%Y")
-        elif self.precision == Precision.MONTH:
-            return f"{MONTH_CASES['nomn'][date.month]} {date.year}"
-        elif self.precision == Precision.DAY:
-            return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year}"
-        elif self.precision == Precision.TIME:
-            return (
-                f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} "
-                f"{date.strftime('%H:%M')}"
-            )
-        else:
-            return str(date)
-
     def range_display(self) -> str:
         start_fmt = self._format_single_date(self.start_date)
         end_fmt = self._format_single_date(self.end_date)
@@ -140,3 +163,30 @@ class DateRange:
             return f"{start_fmt} - {end_fmt}"
         else:
             return ""
+
+    def _format_single_date(self, date: datetime | None) -> str | None:
+        if not date:
+            return None
+
+        if self.precision == Precision.YEAR:
+            return date.strftime("%Y")
+        elif self.precision == Precision.MONTH:
+            return f"{MONTH_CASES['nomn'][date.month]} {date.year}"
+        elif self.precision == Precision.DAY:
+            return f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year}"
+        elif self.precision == Precision.TIME:
+            return (
+                f"{date.day} {MONTH_CASES['gent'][date.month]} {date.year} "
+                f"{date.strftime('%H:%M')}"
+            )
+        else:
+            return str(date)
+
+
+def to_local(date: datetime | None) -> datetime | None:
+    if date is None:
+        return None
+
+    if timezone.is_naive(date):
+        return timezone.make_aware(date)
+    return timezone.localtime(date)
