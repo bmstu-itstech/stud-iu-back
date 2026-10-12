@@ -50,12 +50,30 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             required=True,
         ),
         FormFieldSchema(
+            key="phone",
+            label="Номер мобильного телефона",
+            type=FieldType.TEXT,
+            required=True,
+            placeholder="+79991234567",
+            pattern=r"^\+7\d{10}$",
+        ),
+        FormFieldSchema(
             key="telegram",
             label="Имя пользователя в Telegram",
             type=FieldType.TEXT,
             required=True,
             placeholder="@username",
             pattern=r"^@[A-Za-z0-9_]{3,32}$",
+        ),
+        FormFieldSchema(
+            key="categories",
+            label=("Какой из следующих видов деятельности вам наиболее интересен?"),
+            type=FieldType.MULTIPLE_CHOICE,
+            required=True,
+            options=[
+                OptionSchema(value=val, label=lbl)
+                for val, lbl in Application.ActivityCategory.choices
+            ],
         ),
         FormFieldSchema(
             key="github_url",
@@ -79,16 +97,6 @@ def get_form_structure_service() -> list[FormFieldSchema]:
                 field="categories",
                 contains=Application.ActivityCategory.CONTENT_CREATION.value,
             ),
-        ),
-        FormFieldSchema(
-            key="categories",
-            label=("Какой из следующих видов деятельности вам наиболее интересен?"),
-            type=FieldType.MULTIPLE_CHOICE,
-            required=True,
-            options=[
-                OptionSchema(value=val, label=lbl)
-                for val, lbl in Application.ActivityCategory.choices
-            ],
         ),
         FormFieldSchema(
             key="tech_tasks",
@@ -154,6 +162,7 @@ def application_create_service(payload: ApplicationCreateSchema) -> Application:
         "group": payload.group,
         "birth_date": payload.birth_date,
         "telegram": payload.telegram,
+        "phone": payload.phone,
         "github_url": payload.github_url,
         "portfolio_url": payload.portfolio_url,
         "categories": payload.categories,
@@ -174,6 +183,7 @@ def application_update_service(
     app.group = payload.group
     app.birth_date = payload.birth_date
     app.telegram = payload.telegram
+    app.phone = payload.phone
     app.github_url = payload.github_url
     app.portfolio_url = payload.portfolio_url
     app.categories = payload.categories
@@ -216,9 +226,10 @@ def application_export_csv_service() -> bytes:
             "group",
             "birth_date",
             "telegram",
+            "phone",
+            "categories",
             "github_url",
             "portfolio_url",
-            "categories",
             "tech_tasks",
             "visual_content_types",
         )
@@ -234,6 +245,7 @@ def application_export_csv_service() -> bytes:
                 _csv_cell(app.group),
                 app.birth_date.strftime("%d.%m.%Y"),
                 _csv_cell(app.telegram),
+                _csv_cell(app.phone),
                 _csv_cell(app.github_url),
                 _csv_cell(app.portfolio_url),
                 _csv_choices(app.categories or [], CATEGORY_MAP),
