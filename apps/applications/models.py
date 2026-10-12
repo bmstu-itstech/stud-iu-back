@@ -62,6 +62,7 @@ class Application(models.Model):
     visual_content_types = models.JSONField(
         "Виды визуального контента", default=list, blank=True
     )
+    created_at = models.DateTimeField("Заполнено в", auto_now=True)
 
     class Meta:
         verbose_name = "Анкета"

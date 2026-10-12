@@ -39,6 +39,7 @@ from .services import (
 def _to_schema(application: Application) -> ApplicationSchema:
     return ApplicationSchema(
         id=application.id,
+        created_at=application.created_at,
         full_name=application.full_name,
         group=application.group,
         birth_date=application.birth_date,

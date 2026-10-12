@@ -56,6 +56,7 @@ class ApplicationSchema(msgspec.Struct):
     phone: str
     github_url: str | None
     portfolio_url: str | None
+    created_at: dt.datetime
 
     categories: list[ChoiceItemSchema]
     tech_tasks: list[ChoiceItemSchema]

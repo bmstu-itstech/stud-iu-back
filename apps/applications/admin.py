@@ -7,6 +7,7 @@ from .models import Application
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "created_at",
         "full_name",
         "group",
         "telegram",
@@ -15,7 +16,7 @@ class ApplicationAdmin(admin.ModelAdmin):
         "birth_date",
     )
     search_fields = ("full_name", "group", "telegram")
-    ordering = ("full_name",)
+    ordering = ("-created_at",)
 
     @admin.display(description="Направления")
     def display_categories(self, obj: Application) -> str:
