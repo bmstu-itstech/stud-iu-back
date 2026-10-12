@@ -43,6 +43,7 @@ def _to_schema(application: Application) -> ApplicationSchema:
         group=application.group,
         birth_date=application.birth_date,
         telegram=application.telegram,
+        phone=application.phone,
         github_url=application.github_url,
         portfolio_url=application.portfolio_url,
         categories=map_to_choice_items(application.categories or [], CATEGORY_MAP),

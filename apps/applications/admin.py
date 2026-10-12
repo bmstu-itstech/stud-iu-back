@@ -9,9 +9,10 @@ class ApplicationAdmin(admin.ModelAdmin):
         "id",
         "full_name",
         "group",
+        "telegram",
+        "phone",
         "display_categories",
         "birth_date",
-        "telegram",
     )
     search_fields = ("full_name", "group", "telegram")
     ordering = ("full_name",)

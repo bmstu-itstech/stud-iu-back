@@ -53,6 +53,7 @@ class ApplicationSchema(msgspec.Struct):
     group: str
     birth_date: dt.date
     telegram: str
+    phone: str
     github_url: str | None
     portfolio_url: str | None
 
@@ -68,6 +69,7 @@ class ApplicationCreateSchema(msgspec.Struct):
     group: str
     birth_date: dt.date
     telegram: str
+    phone: str
     github_url: str | None = None
     portfolio_url: str | None = None
 
