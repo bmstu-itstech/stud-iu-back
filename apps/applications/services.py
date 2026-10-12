@@ -243,8 +243,8 @@ def application_export_csv_service() -> bytes:
     for app in Application.objects.order_by("-created_at"):
         writer.writerow(
             [
-                _csv_cell(app.id),
-                _csv_cell(app.created_at),
+                _csv_cell(str(app.id)),
+                app.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 _csv_cell(app.full_name),
                 _csv_cell(app.group),
                 app.birth_date.strftime("%d.%m.%Y"),
