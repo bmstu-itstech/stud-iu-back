@@ -250,9 +250,9 @@ def application_export_csv_service() -> bytes:
                 app.birth_date.strftime("%d.%m.%Y"),
                 _csv_cell(app.telegram),
                 _csv_cell(app.phone),
+                _csv_choices(app.categories or [], CATEGORY_MAP),
                 _csv_cell(app.github_url),
                 _csv_cell(app.portfolio_url),
-                _csv_choices(app.categories or [], CATEGORY_MAP),
                 _csv_choices(app.tech_tasks or [], TECH_TASK_MAP),
                 _csv_choices(app.visual_content_types or [], VISUAL_CONTENT_MAP),
             ]
