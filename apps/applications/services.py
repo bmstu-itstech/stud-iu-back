@@ -240,7 +240,7 @@ def application_export_csv_service() -> bytes:
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(header)
-    for app in Application.objects.order_by("-created_at"):
+    for app in Application.objects.order_by("created_at"):
         writer.writerow(
             [
                 _csv_cell(str(app.id)),
