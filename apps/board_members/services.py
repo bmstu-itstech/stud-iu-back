@@ -8,7 +8,7 @@ from .serializers import BoardMemberCreateSchema
 
 
 class BoardMemberNotFoundError(Exception):
-    """Возникает, когда сущность не найден в базе данных."""
+    """Возникает, когда сущность не найдена в базе данных."""
 
 
 def board_member_list_service() -> QuerySet[BoardMember]:
@@ -41,7 +41,10 @@ def board_member_create_service(
     if image is not None:
         kwargs["image"] = image
 
-    return BoardMember.objects.create(**kwargs)
+    board_member = BoardMember(**kwargs)
+    board_member.full_clean()
+    board_member.save()
+    return board_member
 
 
 def board_member_update_service(
@@ -59,6 +62,7 @@ def board_member_update_service(
     if image is not None:
         board_member.image = image
 
+    board_member.full_clean()
     board_member.save()
     return board_member
 

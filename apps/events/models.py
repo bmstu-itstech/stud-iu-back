@@ -1,11 +1,15 @@
 import uuid
 
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_image_file_extension
 from django.db import models
-from django.db.models import CheckConstraint, Q
 
 from .enums import Precision
-from .utils import DateRange, parse_date
+from .utils import (
+    SLUG_MAX_LENGTH,
+    DateRange,
+    make_slug,
+)
 
 
 class Events(models.Model):
@@ -18,6 +22,16 @@ class Events(models.Model):
         "Название",
         max_length=256,
     )
+    slug = models.SlugField(
+        "Короткая ссылка",
+        max_length=SLUG_MAX_LENGTH,
+        unique=True,
+        blank=True,
+        null=True,
+        error_messages={
+            "unique": "Мероприятие с такой ссылкой уже существует",
+        },
+    )
     description = models.CharField(
         "Описание",
         max_length=256,
@@ -26,8 +40,10 @@ class Events(models.Model):
     extended_description = models.TextField(
         "Развёрнутое описание",
         blank=True,
-        help_text="Развёрнутое описание для подраздела \
-            «О мероприятии» на странице мероприятия",
+        help_text=(
+            "Развёрнутое описание для подраздела "
+            "«О мероприятии» на странице мероприятия"
+        ),
     )
     place = models.CharField(
         "Место проведения",
@@ -40,46 +56,21 @@ class Events(models.Model):
         choices=Precision.choices,
         default=Precision.TIME,
     )
-    start_datetime = models.CharField(
+    start_datetime = models.DateTimeField(
         "Дата начала",
-        max_length=40,
-        help_text="Дата начала мероприятия, например, 11.05.2006",
+        help_text="Дата и время начала мероприятия",
     )
-    end_datetime = models.CharField(
+    end_datetime = models.DateTimeField(
         "Дата конца",
-        max_length=40,
         blank=True,
         null=True,
-        help_text="Дата конца мероприятия, например, 11.05.2006",
+        help_text="Дата и время конца мероприятия",
     )
-
-    @property
-    def date_range_display(self):
-        date_object = DateRange(
-            self.start_datetime,
-            self.end_datetime,
-            self.precision,
-        )
-        return date_object.range_display()
-
-    def clean(self) -> None:
-        super().clean()
-
-        errors = {}
-        for field in ("start_datetime", "end_datetime"):
-            try:
-                parse_date(getattr(self, field))
-            except ValueError as exc:
-                errors[field] = str(exc)
-
-        if errors:
-            raise ValidationError(errors)
-
-    class Meta:
-        abstract = True
-
-
-class PastEvents(Events):
+    registration_link = models.URLField(
+        "Ссылка на регистрацию",
+        blank=True,
+        null=True,
+    )
     album_link = models.URLField(
         "Ссылка на альбом",
         blank=True,
@@ -87,20 +78,43 @@ class PastEvents(Events):
     )
 
     class Meta:
-        verbose_name = "Прошедшее мероприятие"
-        verbose_name_plural = "Прошедшие мероприятия"
+        verbose_name = "Мероприятие"
+        verbose_name_plural = "Мероприятия"
 
+    def __str__(self) -> str:
+        return self.title
 
-class FutureEvents(Events):
-    registration_link = models.URLField(
-        "Ссылка на регистрацию",
-        blank=True,
-        null=True,
-    )
+    def clean(self) -> None:
+        super().clean()
 
-    class Meta:
-        verbose_name = "Запланированное мероприятие"
-        verbose_name_plural = "Запланированные мероприятия"
+        if not self.slug:
+            self.slug = make_slug(self.title)
+
+        errors = {}
+        if not self.slug:
+            errors["slug"] = "Не удалось составить ссылку из названия"
+
+        if (
+            self.start_datetime
+            and self.end_datetime
+            and self.end_datetime < self.start_datetime
+        ):
+            errors["end_datetime"] = "Дата завершения не может быть раньше даты начала"
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def date_range_display(self) -> str:
+        return DateRange(
+            self.start_datetime,
+            self.end_datetime,
+            self.precision,
+        ).range_display()
 
 
 class EventImages(models.Model):
@@ -109,34 +123,20 @@ class EventImages(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    past_event = models.ForeignKey(
-        PastEvents,
+    event = models.ForeignKey(
+        Events,
         on_delete=models.CASCADE,
         related_name="images",
-        blank=True,
-        null=True,
-    )
-    future_event = models.ForeignKey(
-        FutureEvents,
-        on_delete=models.CASCADE,
-        related_name="images",
-        blank=True,
-        null=True,
+        verbose_name="Мероприятие",
     )
     image = models.ImageField(
         "Изображение",
         upload_to="images/events/",
         blank=True,
         null=True,
+        validators=[validate_image_file_extension],
     )
 
     class Meta:
-        constraints = [
-            CheckConstraint(
-                condition=(
-                    Q(past_event__isnull=False, future_event__isnull=True)
-                    | Q(past_event__isnull=True, future_event__isnull=False)
-                ),
-                name="only_one_event_link",
-            )
-        ]
+        verbose_name = "Изображение мероприятия"
+        verbose_name_plural = "Изображения мероприятий"

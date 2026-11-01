@@ -8,7 +8,7 @@ from .serializers import PartnerCreateSchema
 
 
 class PartnerNotFoundError(Exception):
-    """Возникает, когда сущность не найден в базе данных."""
+    """Возникает, когда сущность не найдена в базе данных."""
 
 
 def partner_list_service() -> QuerySet[Partners]:
@@ -34,13 +34,16 @@ def partner_create_service(
     """Создаёт новую сущность Partner."""
     kwargs = {
         "name": payload.name,
-        "url": payload.url,
+        "url": payload.url or "",
     }
 
     if image is not None:
         kwargs["image"] = image
 
-    return Partners.objects.create(**kwargs)
+    partner = Partners(**kwargs)
+    partner.full_clean()
+    partner.save()
+    return partner
 
 
 def partner_update_service(
@@ -57,11 +60,12 @@ def partner_update_service(
         raise PartnerNotFoundError from None
 
     partner.name = payload.name
-    partner.url = payload.url
+    partner.url = payload.url or ""
 
     if image is not None:
         partner.image = image
 
+    partner.full_clean()
     partner.save()
     return partner
 

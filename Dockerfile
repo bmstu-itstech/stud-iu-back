@@ -37,7 +37,7 @@ ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=config.settings \
     PATH="/app/.venv/bin:$PATH"
 
-COPY --from=builder --chown=app:app /app /app
+COPY --from=builder /app /app
 
 CMD ["gunicorn", "config.wsgi:application", \
     "--bind", "0.0.0.0:8000", \

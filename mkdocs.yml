@@ -3,6 +3,7 @@ site_name: Stud IU Back
 nav:
   - Главная: index.md
   - API:
+    - api/index.md
     - Applications: api/applications/index.md
     - Auth: api/auth/index.md
     - Events: api/events/index.md
@@ -12,6 +13,7 @@ theme:
   features:
     - content.code.annotate
     - content.code.copy
+    - navigation.indexes
 
 plugins:
   - search

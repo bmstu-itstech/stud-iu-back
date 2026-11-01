@@ -29,7 +29,10 @@ SECRET_KEY = env.require("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = [env.get("DOMAIN_NAME", "localhost")]
+ALLOWED_HOSTS = [
+    env.get("DOMAIN_NAME", "localhost"),
+    *env.get_list("DJANGO_ALLOWED_HOSTS"),
+]
 
 
 # Application definition
@@ -143,9 +146,16 @@ STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# WhiteNoise
+# https://docs.djangoproject.com/en/6.0/ref/settings/#storages
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # django-cors-headers
 # https://github.com/adamchainz/django-cors-headers

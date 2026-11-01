@@ -1,0 +1,169 @@
+from http import HTTPStatus
+from typing import final, override
+
+from django.core.exceptions import ValidationError
+from django.http import HttpResponse
+from dmr import Body, Controller, Path, Query, modify
+from dmr.endpoint import Endpoint
+from dmr.errors import ErrorType
+from dmr.metadata import ResponseSpec
+from dmr.parsers import MultiPartParser
+from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
+
+from apps.core.errors import validation_error_response
+
+from .models import Events
+from .serializers import (
+    EventCreateSchema,
+    EventImageSchema,
+    EventListQuerySchema,
+    EventPathSchema,
+    EventSchema,
+)
+from .services import (
+    EventNotFoundError,
+    event_create_service,
+    event_delete_service,
+    event_get_service,
+    event_list_service,
+    event_update_service,
+)
+from .utils import format_date
+
+
+@final
+class EventListController(Controller[MsgspecSerializer]):
+    """Класс для взаимодействия с коллекцией сущностей ``Event``."""
+
+    parsers = (
+        MsgspecJsonParser(),
+        MultiPartParser(),
+    )
+
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
+    )
+
+    def get(self, parsed_query: Query[EventListQuerySchema]) -> list[EventSchema]:
+        """Получение списка сущностей Event.
+
+        Фильтр: `period=past|future`.
+        Сортировка: `sort=started_at|ended_at`, `order=asc|desc`.
+        """
+        events = event_list_service(
+            period=parsed_query.period,
+            sort=parsed_query.sort,
+            order=parsed_query.order,
+        )
+        return [_to_schema(event) for event in events]
+
+    def post(self, parsed_body: Body[EventCreateSchema]) -> EventSchema:
+        """Создание новой сущности Event."""
+        images = self.request.FILES.getlist("images") or None
+        return _to_schema(event_create_service(parsed_body, images=images))
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
+        return super().handle_error(endpoint, controller, exc)
+
+
+@final
+class EventDetailController(Controller[MsgspecSerializer]):
+    """Класс для взаимодействия с сущностью Event."""
+
+    parsers = (
+        MsgspecJsonParser(),
+        MultiPartParser(),
+    )
+
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.NOT_FOUND,
+        ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
+    )
+
+    def get(self, parsed_path: Path[EventPathSchema]) -> EventSchema:
+        """Получение сущности Event."""
+        return _to_schema(event_get_service(parsed_path.event_ref))
+
+    def put(
+        self,
+        parsed_path: Path[EventPathSchema],
+        parsed_body: Body[EventCreateSchema],
+    ) -> EventSchema:
+        """Обновление сущности Event."""
+        images = (
+            self.request.FILES.getlist("images")
+            if "images" in self.request.FILES
+            else None
+        )
+        return _to_schema(
+            event_update_service(parsed_path.event_ref, parsed_body, images=images)
+        )
+
+    @modify(status_code=HTTPStatus.NO_CONTENT)
+    def delete(self, parsed_path: Path[EventPathSchema]) -> None:
+        """Удаление сущности Event."""
+        event_delete_service(parsed_path.event_ref)
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, EventNotFoundError):
+            return self.to_error(
+                self.format_error(
+                    "Event not found",
+                    error_type=ErrorType.value_error,
+                ),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
+        return super().handle_error(endpoint, controller, exc)
+
+
+def _to_schema(event: Events) -> EventSchema:
+    return EventSchema(
+        id=event.pk,
+        slug=event.slug,
+        title=event.title,
+        description=event.description,
+        extended_description=event.extended_description,
+        place=event.place,
+        precision=event.precision,
+        start_datetime=format_date(event.start_datetime, event.precision),
+        end_datetime=(
+            format_date(event.end_datetime, event.precision)
+            if event.end_datetime
+            else None
+        ),
+        date_range=event.date_range_display,
+        images=[
+            EventImageSchema(
+                id=image.pk,
+                image=image.image.url if image.image else None,
+            )
+            for image in event.images.all()
+        ],
+        album_link=event.album_link,
+        registration_link=event.registration_link,
+    )
