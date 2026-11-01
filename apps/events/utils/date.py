@@ -135,15 +135,20 @@ class Date:
         return DateStruct(**parsed)
 
     def to_datetime(self) -> datetime:
-        return timezone.make_aware(
-            datetime(
+        try:
+            value = datetime(
                 year=self.data.year,
                 month=self.data.month,
                 day=self.data.day,
                 hour=self.data.hour,
                 minute=self.data.minute,
             )
-        )
+        except ValueError:
+            raise DateFormatError(
+                "Такой даты не существует: "
+                f"{self.data.day:02}.{self.data.month:02}.{self.data.year}"
+            ) from None
+        return timezone.make_aware(value)
 
 
 def format_date(date: datetime, precision: Precision) -> str:
