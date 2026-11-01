@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import final, override
 
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpResponse
 from dmr import Body, Controller, Path, modify
@@ -9,6 +10,8 @@ from dmr.errors import ErrorType
 from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
+
+from apps.core.errors import validation_error_response
 
 from .serializers import (
     BoardMemberCreateSchema,
@@ -44,6 +47,13 @@ class BoardMemberListController(Controller[MsgspecSerializer]):
         MultiPartParser(),
     )
 
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
+    )
+
     def get(self) -> list[BoardMemberSchema]:
         """Получение списка всех сущностей BoardMember."""
         return [
@@ -61,6 +71,17 @@ class BoardMemberListController(Controller[MsgspecSerializer]):
             )
         )
 
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
+        return super().handle_error(endpoint, controller, exc)
+
 
 @final
 class BoardMemberDetailController(Controller[MsgspecSerializer]):
@@ -75,6 +96,10 @@ class BoardMemberDetailController(Controller[MsgspecSerializer]):
         ResponseSpec(
             Controller.error_model,
             status_code=HTTPStatus.NOT_FOUND,
+        ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
         ),
     )
 
@@ -118,4 +143,6 @@ class BoardMemberDetailController(Controller[MsgspecSerializer]):
                 ),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
         return super().handle_error(endpoint, controller, exc)

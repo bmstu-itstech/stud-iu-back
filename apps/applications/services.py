@@ -5,7 +5,13 @@ from django.db.models import QuerySet
 
 from apps.core.serializers import DatabaseId
 
-from .models import Application
+from .models import (
+    GITHUB_PATTERN,
+    GROUP_PATTERN,
+    PHONE_PATTERN,
+    TELEGRAM_PATTERN,
+    Application,
+)
 from .serializers import (
     ApplicationCreateSchema,
     ChoiceItemSchema,
@@ -17,7 +23,7 @@ from .serializers import (
 
 
 class ApplicationNotFoundError(Exception):
-    """Возвращает, когда сущность не найдена в базе данных."""
+    """Возникает, когда сущность не найдена в базе данных."""
 
 
 CATEGORY_MAP = dict(Application.ActivityCategory.choices)
@@ -41,7 +47,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.TEXT,
             required=True,
             placeholder="ИУ6-42Б",
-            pattern=r"^((((ФМОП-)?(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР)(К)?[1-9]\d?)|(ЮР(\.ДК)?))(К)?[ИЦ]?-(((1[0-2])|(\d))((\d)|(.\d\d+))([АМБ]?(В)?)))$",
+            pattern=GROUP_PATTERN,
         ),
         FormFieldSchema(
             key="birth_date",
@@ -55,7 +61,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.TEXT,
             required=True,
             placeholder="+79991234567",
-            pattern=r"^\+7\d{10}$",
+            pattern=PHONE_PATTERN,
         ),
         FormFieldSchema(
             key="telegram",
@@ -63,7 +69,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.TEXT,
             required=True,
             placeholder="@username",
-            pattern=r"^@[A-Za-z0-9_]{3,32}$",
+            pattern=TELEGRAM_PATTERN,
         ),
         FormFieldSchema(
             key="categories",
@@ -81,7 +87,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.URL,
             required=True,
             placeholder="https://github.com/username",
-            pattern=r"^https://github\.com/[A-Za-z0-9-]{1,39}/?$",
+            pattern=GITHUB_PATTERN,
             depends_on=DependencySchema(
                 field="categories",
                 contains=Application.ActivityCategory.PROGRAMMING.value,
@@ -170,7 +176,10 @@ def application_create_service(payload: ApplicationCreateSchema) -> Application:
         "visual_content_types": payload.visual_content_types,
     }
 
-    return Application.objects.create(**kwargs)
+    application = Application(**kwargs)
+    application.full_clean()
+    application.save()
+    return application
 
 
 def application_update_service(
@@ -190,12 +199,13 @@ def application_update_service(
     app.tech_tasks = payload.tech_tasks
     app.visual_content_types = payload.visual_content_types
 
+    app.full_clean()
     app.save()
     return app
 
 
 def application_delete_service(application_id: DatabaseId) -> None:
-    """Удаляет сущность BoardMember по её ID.
+    """Удаляет сущность Application по её ID.
 
     Если сущность не найдена, возникает ошибка ApplicationNotFoundError.
     """
@@ -246,9 +256,9 @@ def application_export_csv_service() -> bytes:
                 app.birth_date.strftime("%d.%m.%Y"),
                 _csv_cell(app.telegram),
                 _csv_cell(app.phone),
+                _csv_choices(app.categories or [], CATEGORY_MAP),
                 _csv_cell(app.github_url),
                 _csv_cell(app.portfolio_url),
-                _csv_choices(app.categories or [], CATEGORY_MAP),
                 _csv_choices(app.tech_tasks or [], TECH_TASK_MAP),
                 _csv_choices(app.visual_content_types or [], VISUAL_CONTENT_MAP),
             ]

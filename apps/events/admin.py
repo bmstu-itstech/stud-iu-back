@@ -24,7 +24,7 @@ class EventsAdmin(admin.ModelAdmin):
     ordering = ("-start_datetime",)
     inlines = [EventImagesInline]
 
-    @admin.display(description="Даты проведения", ordering="start_datetime")
+    @admin.display(description="Дата проведения", ordering="start_datetime")
     def get_date_range(self, obj: Events) -> str:
         return obj.date_range_display
 

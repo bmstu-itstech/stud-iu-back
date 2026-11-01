@@ -2,6 +2,7 @@ import io
 from http import HTTPStatus
 from typing import final, override
 
+from django.core.exceptions import ValidationError
 from django.http import FileResponse, HttpResponse
 from dmr import Body, Controller, Path, modify, validate
 from dmr.endpoint import Endpoint
@@ -12,6 +13,7 @@ from dmr.plugins.msgspec import MsgspecJsonRenderer, MsgspecSerializer
 from dmr.renderers import FileRenderer
 
 from apps.core.auth import QueryJWTSyncAuth
+from apps.core.errors import validation_error_response
 
 from .models import Application
 from .serializers import (
@@ -86,6 +88,13 @@ class ApplicationExportController(Controller[MsgspecSerializer]):
 class ApplicationController(Controller[MsgspecSerializer]):
     """Класс для взаимодействия с коллекцией сущностей Application."""
 
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
+    )
+
     def get(self) -> list[ApplicationSchema]:
         """Получение списка всех сущностей Application."""
         return [_to_schema(application) for application in application_list_service()]
@@ -93,6 +102,17 @@ class ApplicationController(Controller[MsgspecSerializer]):
     def post(self, parsed_body: Body[ApplicationCreateSchema]) -> ApplicationSchema:
         """Создание новой сущности Application."""
         return _to_schema(application_create_service(payload=parsed_body))
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
+        return super().handle_error(endpoint, controller, exc)
 
 
 @final
@@ -103,6 +123,10 @@ class ApplicationDetailController(Controller[MsgspecSerializer]):
         ResponseSpec(
             Controller.error_model,
             status_code=HTTPStatus.NOT_FOUND,
+        ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
         ),
     )
 
@@ -140,4 +164,6 @@ class ApplicationDetailController(Controller[MsgspecSerializer]):
                 ),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
         return super().handle_error(endpoint, controller, exc)

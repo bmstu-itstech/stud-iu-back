@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.validators import validate_image_file_extension
 from django.db import models
 
 
@@ -27,6 +28,7 @@ class BoardMember(models.Model):
         upload_to="images/board_member/",
         blank=True,
         null=True,
+        validators=[validate_image_file_extension],
     )
 
     class Meta:

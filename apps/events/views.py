@@ -10,6 +10,8 @@ from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
 
+from apps.core.errors import validation_error_response
+
 from .models import Events
 from .serializers import (
     EventCreateSchema,
@@ -26,12 +28,12 @@ from .services import (
     event_list_service,
     event_update_service,
 )
-from .utils import to_local
+from .utils import format_date
 
 
 @final
 class EventListController(Controller[MsgspecSerializer]):
-    """Класс для взаимодействия с коллекцией сущностей Event."""
+    """Класс для взаимодействия с коллекцией сущностей ``Event``."""
 
     parsers = (
         MsgspecJsonParser(),
@@ -71,7 +73,7 @@ class EventListController(Controller[MsgspecSerializer]):
         exc: Exception,
     ) -> HttpResponse:
         if isinstance(exc, ValidationError):
-            return _validation_error(self, exc)
+            return validation_error_response(self, exc)
         return super().handle_error(endpoint, controller, exc)
 
 
@@ -135,7 +137,7 @@ class EventDetailController(Controller[MsgspecSerializer]):
                 status_code=HTTPStatus.NOT_FOUND,
             )
         if isinstance(exc, ValidationError):
-            return _validation_error(self, exc)
+            return validation_error_response(self, exc)
         return super().handle_error(endpoint, controller, exc)
 
 
@@ -148,9 +150,13 @@ def _to_schema(event: Events) -> EventSchema:
         extended_description=event.extended_description,
         place=event.place,
         precision=event.precision,
-        start_datetime=to_local(event.start_datetime),
-        end_datetime=to_local(event.end_datetime),
-        date_range_display=event.date_range_display,
+        start_datetime=format_date(event.start_datetime, event.precision),
+        end_datetime=(
+            format_date(event.end_datetime, event.precision)
+            if event.end_datetime
+            else None
+        ),
+        date_range=event.date_range_display,
         images=[
             EventImageSchema(
                 id=image.pk,
@@ -160,15 +166,4 @@ def _to_schema(event: Events) -> EventSchema:
         ],
         album_link=event.album_link,
         registration_link=event.registration_link,
-    )
-
-
-def _validation_error(controller: Controller, exc: ValidationError) -> HttpResponse:
-    detail = [
-        {"msg": messages[0], "loc": [field], "type": ErrorType.value_error}
-        for field, messages in exc.message_dict.items()
-    ]
-    return controller.to_error(
-        {"detail": detail},
-        status_code=HTTPStatus.BAD_REQUEST,
     )

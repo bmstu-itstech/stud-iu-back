@@ -1,6 +1,7 @@
 import uuid
 
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_image_file_extension
 from django.db import models
 
 from .enums import Precision
@@ -8,8 +9,6 @@ from .utils import (
     SLUG_MAX_LENGTH,
     DateRange,
     make_slug,
-    period_end,
-    truncate_date,
 )
 
 
@@ -28,6 +27,7 @@ class Events(models.Model):
         max_length=SLUG_MAX_LENGTH,
         unique=True,
         blank=True,
+        null=True,
         error_messages={
             "unique": "Мероприятие с такой ссылкой уже существует",
         },
@@ -66,11 +66,6 @@ class Events(models.Model):
         null=True,
         help_text="Дата и время конца мероприятия",
     )
-    finished_at = models.DateTimeField(
-        "Конец периода с учётом точности",
-        editable=False,
-        db_index=True,
-    )
     registration_link = models.URLField(
         "Ссылка на регистрацию",
         blank=True,
@@ -91,8 +86,9 @@ class Events(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        self._truncate_dates()
-        self._fill_slug()
+
+        if not self.slug:
+            self.slug = make_slug(self.title)
 
         errors = {}
         if not self.slug:
@@ -109,12 +105,7 @@ class Events(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs) -> None:
-        self._truncate_dates()
-        self._fill_slug()
-        self.finished_at = period_end(
-            self.end_datetime or self.start_datetime,
-            self.precision,
-        )
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @property
@@ -124,14 +115,6 @@ class Events(models.Model):
             self.end_datetime,
             self.precision,
         ).range_display()
-
-    def _truncate_dates(self) -> None:
-        self.start_datetime = truncate_date(self.start_datetime, self.precision)
-        self.end_datetime = truncate_date(self.end_datetime, self.precision)
-
-    def _fill_slug(self) -> None:
-        if not self.slug:
-            self.slug = make_slug(self.title)
 
 
 class EventImages(models.Model):
@@ -151,6 +134,7 @@ class EventImages(models.Model):
         upload_to="images/events/",
         blank=True,
         null=True,
+        validators=[validate_image_file_extension],
     )
 
     class Meta:

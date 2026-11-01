@@ -1,17 +1,17 @@
 import uuid
+from datetime import datetime
 
-from django import forms
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import F, QuerySet
+from django.db.models import Case, F, Q, QuerySet, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.events.enums import EventPeriod, EventSortField, SortOrder
+from apps.events.enums import EventPeriod, EventSortField, Precision, SortOrder
 from apps.events.models import EventImages, Events
 from apps.events.serializers import EventCreateSchema
-from apps.events.utils import parse_date
+from apps.events.utils import Date, DateFormatError
 
 from .exceptions import EventNotFoundError
 
@@ -23,24 +23,36 @@ def event_list_service(
 ) -> QuerySet[Events]:
     """Возвращает мероприятия за период, отсортированные по дате.
 
-    По умолчанию прошедшие идут от новых к старым, остальные - от ближайших.
+    По умолчанию прошедшие идут от новых к старым, будущие - от ближайших.
+    Без периода сначала идут будущие от ближайших, затем прошедшие от новых.
     """
-    events = Events.objects.prefetch_related("images").annotate(
+    events = Events.objects.prefetch_related("images").alias(
         ended_at=Coalesce("end_datetime", "start_datetime"),
     )
 
     now = timezone.now()
     if period == EventPeriod.PAST:
-        events = events.filter(finished_at__lt=now)
+        events = events.filter(ended_at__lt=now)
     elif period == EventPeriod.FUTURE:
-        events = events.filter(finished_at__gte=now)
+        events = events.filter(ended_at__gte=now)
+
+    field = F("ended_at" if sort == EventSortField.ENDED_AT else "start_datetime")
+
+    if period is None and order is None:
+        upcoming = Q(ended_at__gte=now)
+        return events.order_by(
+            Case(When(upcoming, then=0), default=1),
+            Case(When(upcoming, then=field)).asc(),
+            Case(When(~upcoming, then=field)).desc(),
+            "pk",
+        )
 
     if order is None:
         order = SortOrder.DESC if period == EventPeriod.PAST else SortOrder.ASC
 
-    field = F("ended_at" if sort == EventSortField.ENDED_AT else "start_datetime")
     return events.order_by(
         field.desc() if order == SortOrder.DESC else field.asc(),
+        "pk",
     )
 
 
@@ -57,9 +69,6 @@ def event_create_service(
     payload: EventCreateSchema, images: list[UploadedFile] | None = None
 ) -> Events:
     """Создаёт мероприятие."""
-    if images:
-        _validate_event_images(images)
-
     event = Events()
     _fill_event_fields(event, payload)
 
@@ -80,9 +89,6 @@ def event_update_service(
     Если мероприятие не найдено, возникает ошибка EventNotFoundError.
     """
     event = _get_event(event_ref, Events.objects.all())
-
-    if images:
-        _validate_event_images(images)
 
     _fill_event_fields(event, payload)
 
@@ -114,49 +120,46 @@ def _get_event(event_ref: str, events: QuerySet[Events]) -> Events:
         raise EventNotFoundError from None
 
 
-def _validate_event_images(images: list[UploadedFile]) -> None:
-    image_field = forms.ImageField()
-    for image in images:
-        try:
-            image_field.clean(image)
-        except ValidationError as exc:
-            raise ValidationError(
-                {"images": f"{image.name}: {exc.messages[0]}"}
-            ) from None
-
-
 def _fill_event_fields(event: Events, payload: EventCreateSchema) -> None:
-    dates = _parse_event_dates(payload)
-
     event.title = payload.title
     if payload.slug is not None:
         event.slug = payload.slug
     event.description = payload.description
     event.extended_description = payload.extended_description
     event.place = payload.place
-    event.precision = payload.precision
-    event.start_datetime = dates["start_datetime"]
-    event.end_datetime = dates["end_datetime"]
+    event.precision = _parse_precision(payload.precision)
+    event.start_datetime = _parse_date(
+        "start_datetime", payload.start_datetime, event.precision
+    )
+    event.end_datetime = _parse_date(
+        "end_datetime", payload.end_datetime, event.precision
+    )
     event.album_link = payload.album_link
     event.registration_link = payload.registration_link
-    event.full_clean()
+
     event.save()
 
 
-def _parse_event_dates(payload: EventCreateSchema) -> dict:
-    dates = {}
-    errors = {}
-    for field in ("start_datetime", "end_datetime"):
-        try:
-            dates[field] = parse_date(getattr(payload, field), payload.precision)
-        except ValueError as exc:
-            errors[field] = str(exc)
+def _parse_precision(value: str) -> Precision:
+    try:
+        return Precision(value)
+    except ValueError:
+        raise ValidationError(
+            {"precision": f"Неизвестный класс точности: {value}"}
+        ) from None
 
-    if errors:
-        raise ValidationError(errors)
-    return dates
+
+def _parse_date(field: str, value: str | None, precision: Precision) -> datetime | None:
+    if value is None:
+        return None
+    try:
+        return Date(value, precision).to_datetime()
+    except DateFormatError as exc:
+        raise ValidationError({field: str(exc)}) from None
 
 
 def _create_event_images(event: Events, images: list[UploadedFile]) -> None:
     for image in images:
-        EventImages.objects.create(event=event, image=image)
+        event_image = EventImages(event=event, image=image)
+        event_image.full_clean()
+        event_image.save()

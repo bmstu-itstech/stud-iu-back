@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.validators import validate_image_file_extension
 from django.db import models
 from django.utils import timezone
 
@@ -23,6 +24,7 @@ class News(models.Model):
         upload_to="images/news/",
         blank=True,
         null=True,
+        validators=[validate_image_file_extension],
     )
     created_at = models.DateTimeField(
         "Дата",

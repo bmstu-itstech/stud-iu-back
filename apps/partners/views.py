@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import final, override
 
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpResponse
 from dmr import Body, Controller, Path, modify
@@ -9,6 +10,8 @@ from dmr.errors import ErrorType
 from dmr.metadata import ResponseSpec
 from dmr.parsers import MultiPartParser
 from dmr.plugins.msgspec import MsgspecJsonParser, MsgspecSerializer
+
+from apps.core.errors import validation_error_response
 
 from .serializers import PartnerCreateSchema, PartnerPathSchema, PartnerSchema
 from .services import (
@@ -39,6 +42,13 @@ class PartnerListController(Controller[MsgspecSerializer]):
         MultiPartParser(),
     )
 
+    responses = (
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
+    )
+
     def get(self) -> list[PartnerSchema]:
         """Получение списка всех сущностей Partner."""
         return [_to_schema(partner) for partner in partner_list_service()]
@@ -53,6 +63,17 @@ class PartnerListController(Controller[MsgspecSerializer]):
                 image=image_file,
             )
         )
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[MsgspecSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
+        return super().handle_error(endpoint, controller, exc)
 
 
 @final
@@ -69,6 +90,10 @@ class PartnerDetailController(Controller[MsgspecSerializer]):
             Controller.error_model,
             status_code=HTTPStatus.NOT_FOUND,
         ),
+        ResponseSpec(
+            Controller.error_model,
+            status_code=HTTPStatus.BAD_REQUEST,
+        ),
     )
 
     def get(self, parsed_path: Path[PartnerPathSchema]) -> PartnerSchema:
@@ -81,7 +106,7 @@ class PartnerDetailController(Controller[MsgspecSerializer]):
         parsed_body: Body[PartnerCreateSchema],
     ) -> PartnerSchema:
         """Обновление информации о сущности Partner по её ID."""
-        image_file: UploadedFile | None = self.request.FILES.get("logo")
+        image_file: UploadedFile | None = self.request.FILES.get("image")
 
         return _to_schema(
             partner_update_service(
@@ -111,4 +136,6 @@ class PartnerDetailController(Controller[MsgspecSerializer]):
                 ),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+        if isinstance(exc, ValidationError):
+            return validation_error_response(self, exc)
         return super().handle_error(endpoint, controller, exc)

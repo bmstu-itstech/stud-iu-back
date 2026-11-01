@@ -8,7 +8,7 @@ from .serializers import NewsCreateSchema
 
 
 class NewsNotFoundError(Exception):
-    """Возникает, когда сущность не найден в базе данных."""
+    """Возникает, когда сущность не найдена в базе данных."""
 
 
 def news_list_service() -> QuerySet[News]:
@@ -43,7 +43,10 @@ def news_create_service(
     if cover is not None:
         kwargs["cover"] = cover
 
-    return News.objects.create(**kwargs)
+    news = News(**kwargs)
+    news.full_clean()
+    news.save()
+    return news
 
 
 def news_update_service(
@@ -67,6 +70,7 @@ def news_update_service(
     if cover is not None:
         news.cover = cover
 
+    news.full_clean()
     news.save()
     return news
 
