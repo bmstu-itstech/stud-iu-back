@@ -41,7 +41,7 @@ def get_form_structure_service() -> list[FormFieldSchema]:
             type=FieldType.TEXT,
             required=True,
             placeholder="ИУ6-42Б",
-            pattern=r"^((((ФМОП-)?(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР)(К)?[1-9]\d?)|(ЮР(\.ДК)?))(К)?[ИЦ]?-(((1[0-2])|(\d))((\d)|(.\d\d+))([АМБ]?(В)?)))$",
+            pattern=r"^(ИУ|ИБМ|МТ|СМ|БМТ|РЛ|Э|РК|ФН|Л|СГН|РКТ|АК|ПС|РТ|ЛТ|К|ЮР|ЮР.ДК|МК|ИУК)([1-9]\d?)?[КИЦ]?-[1-9]\d?([1-9]|(\.1\d))[АМБ]?В?(\/\d)?$",
         ),
         FormFieldSchema(
             key="birth_date",
@@ -222,6 +222,8 @@ def application_export_csv_service() -> bytes:
     header = [
         fields.get_field(name).verbose_name
         for name in (
+            "id",
+            "created_at",
             "full_name",
             "group",
             "birth_date",
@@ -238,9 +240,11 @@ def application_export_csv_service() -> bytes:
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(header)
-    for app in Application.objects.order_by("full_name"):
+    for app in Application.objects.order_by("created_at"):
         writer.writerow(
             [
+                _csv_cell(str(app.id)),
+                app.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 _csv_cell(app.full_name),
                 _csv_cell(app.group),
                 app.birth_date.strftime("%d.%m.%Y"),
